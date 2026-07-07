@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Siren Practice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #2a1f1a 0%, #3d2817 100%);
+            color: #e8d4c4;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #1a1410;
+            border: 2px solid #8b6f47;
+            border-radius: 4px;
+            padding: 28px;
+            max-width: 560px;
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            font-size: 26px;
+            margin-bottom: 24px;
+            text-align: center;
+            color: #d4a574;
+            letter-spacing: 1px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #8b6f47;
+        }
+
+        .section:last-of-type {
+            border-bottom: none;
+        }
+
+        .label {
+            display: block;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: #b8956a;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .control-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .control-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        input[type="number"],
+        select {
+            background: #2a1f1a;
+            border: 1px solid #8b6f47;
+            color: #e8d4c4;
+            padding: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            border-radius: 2px;
+            transition: border-color 0.2s;
+            width: 100%;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #d4a574;
+            background: #332411;
+        }
+
+        select {
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        button {
+            background: #8b6f47;
+            border: none;
+            color: #1a1410;
+            padding: 14px 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border-radius: 2px;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        button:active:not(:disabled) {
+            background: #d4a574;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .button-group.full {
+            grid-template-columns: 1fr;
+        }
+
+        .button-group button {
+            width: 100%;
+        }
+
+        .display-value {
+            background: #2a1f1a;
+            border: 1px solid #8b6f47;
+            padding: 12px;
+            border-radius: 2px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            text-align: center;
+            color: #d4a574;
+            font-weight: 500;
+        }
+
+        .mode-toggle {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .mode-button {
+            padding: 10px;
+            font-size: 12px;
+            background: #2a1f1a;
+            border: 1px solid #8b6f47;
+            color: #e8d4c4;
+            cursor: pointer;
+            border-radius: 2px;
+        }
+
+        .mode-button.active {
+            background: #8b6f47;
+            color: #1a1410;
+            border-color: #d4a574;
+        }
+
+        .stepper {
+            display: grid;
+            grid-template-columns: 56px 1fr 56px;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .stepper button {
+            padding: 10px 0;
+            font-size: 18px;
+            line-height: 1;
+        }
+
+        .stepper input {
+            text-align: center;
+        }
+
+        .status-display {
+            background: #2a1f1a;
+            border: 1px solid #8b6f47;
+            padding: 16px;
+            border-radius: 2px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .status-label {
+            font-size: 11px;
+            color: #8b6f47;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 32px;
+            color: #d4a574;
+            font-weight: 600;
+        }
+
+        .status-sub {
+            font-size: 12px;
+            color: #8b6f47;
+            margin-top: 8px;
+        }
+
+        .breathing-text {
+            color: #6f8b47 !important;
+            font-size: 16px !important;
+            font-weight: 700;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .tab-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+
+        .tab-button {
+            padding: 12px;
+            font-size: 13px;
+            background: #2a1f1a;
+            border: 1px solid #8b6f47;
+            color: #e8d4c4;
+        }
+
+        .tab-button.active {
+            background: #8b6f47;
+            color: #1a1410;
+        }
+
+        .pitch-display {
+            text-align: center;
+            padding: 32px 16px;
+        }
+
+        .pitch-note {
+            font-size: 64px;
+            color: #d4a574;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .pitch-freq {
+            font-size: 16px;
+            color: #b8956a;
+            margin-top: 8px;
+        }
+
+        .pitch-cents {
+            font-size: 13px;
+            color: #8b6f47;
+            margin-top: 8px;
+        }
+
+        .cents-meter {
+            height: 8px;
+            background: #2a1f1a;
+            border: 1px solid #8b6f47;
+            border-radius: 4px;
+            margin: 16px auto 0;
+            max-width: 280px;
+            position: relative;
+        }
+
+        .cents-needle {
+            position: absolute;
+            top: -4px;
+            width: 3px;
+            height: 14px;
+            background: #d4a574;
+            border-radius: 2px;
+            left: 50%;
+            transition: left 0.08s linear;
+        }
+
+        .cents-center {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            width: 1px;
+            height: 100%;
+            background: #8b6f47;
+        }
+
+        .mic-error {
+            color: #c0704d;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Siren Practice</h1>
+
+        <div class="tab-bar">
+            <button class="tab-button active" id="sirenTab" onclick="switchTab('siren')">Siren</button>
+            <button class="tab-button" id="pitchTab" onclick="switchTab('pitch')">Pitch Test</button>
+        </div>
+
+        <div id="sirenPanel">
+            <div class="section">
+                <label class="label">Starting Frequency</label>
+                <div class="mode-toggle">
+                    <button class="mode-button active" id="startNoteMode" onclick="setMode('start', 'note')">Note</button>
+                    <button class="mode-button" id="startFreqMode" onclick="setMode('start', 'frequency')">Hz</button>
+                </div>
+                <div id="startNoteControls" class="control-row">
+                    <select id="startNoteSelect" onchange="updateFromNote('start')"></select>
+                    <select id="startOctaveSelect" onchange="updateFromNote('start')"></select>
+                </div>
+                <div id="startFreqControls" class="control-row full hidden">
+                    <input type="number" id="startFrequencyInput" value="220" step="0.1" inputmode="decimal" onchange="updateFromFreq('start')">
+                </div>
+                <div class="display-value" id="startFreqDisplay">220 Hz</div>
+            </div>
+
+            <div class="section">
+                <label class="label">Ending (Maximum) Frequency</label>
+                <div class="mode-toggle">
+                    <button class="mode-button active" id="endNoteMode" onclick="setMode('end', 'note')">Note</button>
+                    <button class="mode-button" id="endFreqMode" onclick="setMode('end', 'frequency')">Hz</button>
+                </div>
+                <div id="endNoteControls" class="control-row">
+                    <select id="endNoteSelect" onchange="updateFromNote('end')"></select>
+                    <select id="endOctaveSelect" onchange="updateFromNote('end')"></select>
+                </div>
+                <div id="endFreqControls" class="control-row full hidden">
+                    <input type="number" id="endFrequencyInput" value="440" step="0.1" inputmode="decimal" onchange="updateFromFreq('end')">
+                </div>
+                <div class="display-value" id="endFreqDisplay">440 Hz</div>
+                <div class="button-group">
+                    <button onclick="shiftEnd(1)">Max + 1 Semitone</button>
+                    <button onclick="shiftEnd(-1)">Max − 1 Semitone</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <label class="label">Duration Per Stroke (seconds)</label>
+                <div class="stepper">
+                    <button onclick="stepInput('climbDuration', -1)">−</button>
+                    <input type="number" id="climbDuration" value="10" min="1" step="1" inputmode="decimal">
+                    <button onclick="stepInput('climbDuration', 1)">+</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <label class="label">Breaths Per Stroke</label>
+                <div class="stepper">
+                    <button onclick="stepInput('numBreaths', -1)">−</button>
+                    <input type="number" id="numBreaths" value="2" min="0" max="10" step="1" inputmode="numeric">
+                    <button onclick="stepInput('numBreaths', 1)">+</button>
+                </div>
+                <label class="label" style="margin-top: 16px;">Breath Duration (seconds)</label>
+                <div class="stepper">
+                    <button onclick="stepInput('breathDuration', -0.25)">−</button>
+                    <input type="number" id="breathDuration" value="1" min="0.25" max="5" step="0.25" inputmode="decimal">
+                    <button onclick="stepInput('breathDuration', 0.25)">+</button>
+                </div>
+            </div>
+
+            <div id="statusDisplay" class="status-display hidden">
+                <div class="status-label">Current Pitch</div>
+                <div class="status-value" id="currentNote">A3</div>
+                <div class="status-sub" id="currentFreq">220 Hz</div>
+                <div class="status-sub" id="modeIndicator">Ascending</div>
+                <div class="status-sub" id="breathCounter"></div>
+                <div class="status-sub" id="breathStatus"></div>
+            </div>
+
+            <div class="section">
+                <div class="button-group full">
+                    <button id="startBtn" onclick="startSiren()">Start Siren</button>
+                </div>
+                <div class="button-group full">
+                    <button id="descendBtn" class="hidden" onclick="toggleDirection()" style="background: #6f8b47;">Begin Descent</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="pitchPanel" class="hidden">
+            <div class="section">
+                <div class="pitch-display">
+                    <div class="status-label">Detected Note</div>
+                    <div class="pitch-note" id="detectedNote">—</div>
+                    <div class="pitch-freq" id="detectedFreq">Listening not started</div>
+                    <div class="cents-meter">
+                        <div class="cents-center"></div>
+                        <div class="cents-needle" id="centsNeedle"></div>
+                    </div>
+                    <div class="pitch-cents" id="detectedCents">flat ← → sharp</div>
+                </div>
+                <div class="button-group full">
+                    <button id="listenBtn" onclick="toggleListening()">Start Listening</button>
+                </div>
+                <div class="mic-error hidden" id="micError"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        'use strict';
+        var NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        var A4_FREQ = 440;
+        var A4_SEMITONE = 69;
+
+        function freqToSemitone(freq) {
+            return 12 * Math.log2(freq / A4_FREQ) + A4_SEMITONE;
+        }
+        function semitoneToFreq(semitone) {
+            return A4_FREQ * Math.pow(2, (semitone - A4_SEMITONE) / 12);
+        }
+        function semitoneToNote(semitone) {
+            var rounded = Math.round(semitone);
+            var idx = ((rounded % 12) + 12) % 12;
+            var octave = Math.floor(rounded / 12) - 1;
+            return { note: NOTE_NAMES[idx], octave: octave };
+        }
+        function noteToSemitone(noteName, octave) {
+            return (octave + 1) * 12 + NOTE_NAMES.indexOf(noteName);
+        }
+
+        var audioContext = null;
+        var oscillator = null;
+        var gainNode = null;
+        var animationId = null;
+        var currentModeStart = 'note';
+        var currentModeEnd = 'note';
+        var isPlaying = false;
+        var isAscending = true;
+        var isBreathing = false;
+        var currentFreq = 220;
+        var runStartFreq = 220;
+        var runEndFreq = 440;
+        var climbDurationMs = 10000;
+        var breathDurationMs = 1000;
+        var breathPositions = [];
+        var numBreathsRun = 0;
+        var timeInPhase = 0;
+        var currentBreathIndex = 0;
+        var lastFrameTime = 0;
+        var breathTimeoutId = null;
+        var listening = false;
+        var micStream = null;
+        var analyser = null;
+        var pitchRafId = null;
+        var pitchBuf = null;
+
+        function fillSelects(noteId, octaveId, defNote, defOct) {
+            var noteSel = document.getElementById(noteId);
+            NOTE_NAMES.forEach(function(n) {
+                var o = document.createElement('option');
+                o.value = n; o.textContent = n;
+                if (n === defNote) o.selected = true;
+                noteSel.appendChild(o);
+            });
+            var octSel = document.getElementById(octaveId);
+            for (var i = 0; i <= 7; i++) {
+                var o2 = document.createElement('option');
+                o2.value = i; o2.textContent = i;
+                if (i === defOct) o2.selected = true;
+                octSel.appendChild(o2);
+            }
+        }
+        fillSelects('startNoteSelect', 'startOctaveSelect', 'A', 3);
+        fillSelects('endNoteSelect', 'endOctaveSelect', 'A', 4);
+
+        function getFreq(section) {
+            var mode = section === 'start' ? currentModeStart : currentModeEnd;
+            if (mode === 'note') {
+                var note = document.getElementById(section + 'NoteSelect').value;
+                var octave = parseInt(document.getElementById(section + 'OctaveSelect').value, 10);
+                return semitoneToFreq(noteToSemitone(note, octave));
+            }
+            var v = parseFloat(document.getElementById(section + 'FrequencyInput').value);
+            return (v > 0) ? v : (section === 'start' ? 220 : 440);
+        }
+
+        function updateFromNote(section) {
+            var note = document.getElementById(section + 'NoteSelect').value;
+            var octave = parseInt(document.getElementById(section + 'OctaveSelect').value, 10);
+            var freq = semitoneToFreq(noteToSemitone(note, octave));
+            document.getElementById(section + 'FrequencyInput').value = Math.round(freq * 10) / 10;
+            updateFreqDisplay(section);
+        }
+
+        function updateFromFreq(section) {
+            var freq = parseFloat(document.getElementById(section + 'FrequencyInput').value);
+            if (freq > 0) {
+                var n = semitoneToNote(freqToSemitone(freq));
+                document.getElementById(section + 'NoteSelect').value = n.note;
+                document.getElementById(section + 'OctaveSelect').value = Math.min(Math.max(n.octave, 0), 7);
+            }
+            updateFreqDisplay(section);
+        }
+
+        function updateFreqDisplay(section) {
+            var freq = getFreq(section);
+            var n = semitoneToNote(freqToSemitone(freq));
+            document.getElementById(section + 'FreqDisplay').textContent = n.note + n.octave + ' • ' + (Math.round(freq * 10) / 10) + ' Hz';
+        }
+
+        function setMode(section, mode) {
+            if (section === 'start') currentModeStart = mode; else currentModeEnd = mode;
+            var noteControls = document.getElementById(section + 'NoteControls');
+            var freqControls = document.getElementById(section + 'FreqControls');
+            var noteBtn = document.getElementById(section + 'NoteMode');
+            var freqBtn = document.getElementById(section + 'FreqMode');
+            if (mode === 'note') {
+                noteControls.classList.remove('hidden');
+                freqControls.classList.add('hidden');
+                noteBtn.classList.add('active');
+                freqBtn.classList.remove('active');
+            } else {
+                noteControls.classList.add('hidden');
+                freqControls.classList.remove('hidden');
+                noteBtn.classList.remove('active');
+                freqBtn.classList.add('active');
+            }
+            updateFreqDisplay(section);
+        }
+
+        function shiftEnd(semitones) {
+            var freq = getFreq('end') * Math.pow(2, semitones / 12);
+            if (freq <= getFreq('start')) return;
+            document.getElementById('endFrequencyInput').value = Math.round(freq * 10) / 10;
+            var n = semitoneToNote(freqToSemitone(freq));
+            document.getElementById('endNoteSelect').value = n.note;
+            document.getElementById('endOctaveSelect').value = Math.min(Math.max(n.octave, 0), 7);
+            updateFreqDisplay('end');
+            if (isPlaying) runEndFreq = freq;
+        }
+
+        function stepInput(id, delta) {
+            var el = document.getElementById(id);
+            var v = parseFloat(el.value) || 0;
+            var min = parseFloat(el.min);
+            var max = el.max !== '' ? parseFloat(el.max) : Infinity;
+            v = Math.round((v + delta) * 100) / 100;
+            if (!isNaN(min)) v = Math.max(v, min);
+            v = Math.min(v, max);
+            el.value = v;
+        }
+
+        function initAudio() {
+            if (!audioContext) {
+                var AC = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AC();
+            }
+            if (audioContext.state === 'suspended') audioContext.resume();
+            return audioContext;
+        }
+
+        var osc2 = null;
+        var filterNode = null;
+
+        function buildVoice(ctx, startFreq) {
+            oscillator = ctx.createOscillator();
+            osc2 = ctx.createOscillator();
+            gainNode = ctx.createGain();
+            filterNode = ctx.createBiquadFilter();
+
+            oscillator.type = 'triangle';
+            osc2.type = 'sine';
+            oscillator.frequency.value = startFreq;
+            osc2.frequency.value = startFreq * 2;
+
+            var g2 = ctx.createGain();
+            g2.gain.value = 0.12;
+
+            filterNode.type = 'lowpass';
+            filterNode.frequency.value = 2400;
+            filterNode.Q.value = 0.7;
+
+            oscillator.connect(filterNode);
+            osc2.connect(g2);
+            g2.connect(filterNode);
+            filterNode.connect(gainNode);
+            gainNode.connect(ctx.destination);
+
+            gainNode.gain.value = 0;
+            gainNode.gain.setTargetAtTime(0.25, ctx.currentTime, 0.05);
+
+            oscillator.start();
+            osc2.start();
+        }
+
+        function setVoiceFreq(f) {
+            if (oscillator) oscillator.frequency.value = f;
+            if (osc2) osc2.frequency.value = f * 2;
+        }
+
+        function killVoice() {
+            if (oscillator) { try { oscillator.stop(); } catch (e) {} oscillator = null; }
+            if (osc2) { try { osc2.stop(); } catch (e) {} osc2 = null; }
+        }
+
+        function computeBreathPositions(n, durationMs) {
+            var arr = [];
+            for (var i = 1; i <= n; i++) arr.push((i / (n + 1)) * durationMs);
+            return arr;
+        }
+
+        function startSiren() {
+            var ctx = initAudio();
+            runStartFreq = getFreq('start');
+            runEndFreq = getFreq('end');
+            if (runEndFreq <= runStartFreq) {
+                alert('Ending frequency must be higher than starting frequency.');
+                return;
+            }
+            climbDurationMs = Math.max(parseFloat(document.getElementById('climbDuration').value) || 10, 1) * 1000;
+            breathDurationMs = Math.max(parseFloat(document.getElementById('breathDuration').value) || 1, 0.25) * 1000;
+            numBreathsRun = Math.max(parseInt(document.getElementById('numBreaths').value, 10) || 0, 0);
+            breathPositions = computeBreathPositions(numBreathsRun, climbDurationMs);
+
+            killVoice();
+            buildVoice(ctx, runStartFreq);
+
+            isPlaying = true;
+            isAscending = true;
+            isBreathing = false;
+            timeInPhase = 0;
+            currentBreathIndex = 0;
+            currentFreq = runStartFreq;
+            lastFrameTime = performance.now();
+
+            document.getElementById('startBtn').textContent = 'Stop';
+            document.getElementById('startBtn').onclick = stopSiren;
+            document.getElementById('statusDisplay').classList.remove('hidden');
+            var db = document.getElementById('descendBtn');
+            db.classList.remove('hidden');
+            db.textContent = 'Begin Descent';
+            db.style.background = '#6f8b47';
+            document.getElementById('modeIndicator').textContent = 'Ascending';
+
+            animationId = requestAnimationFrame(tick);
+        }
+
+        function stopSiren() {
+            isPlaying = false;
+            if (breathTimeoutId) { clearTimeout(breathTimeoutId); breathTimeoutId = null; }
+            if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+            if (gainNode && audioContext) {
+                gainNode.gain.setTargetAtTime(0, audioContext.currentTime, 0.03);
+            }
+            setTimeout(killVoice, 150);
+            isBreathing = false;
+
+            document.getElementById('startBtn').textContent = 'Start Siren';
+            document.getElementById('startBtn').onclick = startSiren;
+            document.getElementById('statusDisplay').classList.add('hidden');
+            document.getElementById('descendBtn').classList.add('hidden');
+            document.getElementById('breathStatus').textContent = '';
+        }
+
+        function toggleDirection() {
+            if (!isPlaying) return;
+            var progress = Math.min(timeInPhase / climbDurationMs, 1);
+            timeInPhase = (1 - progress) * climbDurationMs;
+            isAscending = !isAscending;
+            currentBreathIndex = 0;
+            while (currentBreathIndex < breathPositions.length && breathPositions[currentBreathIndex] <= timeInPhase) {
+                currentBreathIndex++;
+            }
+            var btn = document.getElementById('descendBtn');
+            var mi = document.getElementById('modeIndicator');
+            if (isAscending) {
+                btn.textContent = 'Begin Descent';
+                btn.style.background = '#6f8b47';
+                mi.textContent = 'Ascending';
+            } else {
+                btn.textContent = 'Begin Ascent';
+                btn.style.background = '#8b6f47';
+                mi.textContent = 'Descending';
+            }
+        }
+
+        function beginBreath() {
+            isBreathing = true;
+            gainNode.gain.setTargetAtTime(0, audioContext.currentTime, 0.03);
+            var breathLabel = document.getElementById('breathStatus');
+            breathLabel.textContent = 'BREATHE';
+            breathLabel.classList.add('breathing-text');
+
+            breathTimeoutId = setTimeout(function() {
+                breathTimeoutId = null;
+                if (!isPlaying) return;
+                gainNode.gain.setTargetAtTime(0.25, audioContext.currentTime, 0.03);
+                isBreathing = false;
+                currentBreathIndex++;
+                breathLabel.classList.remove('breathing-text');
+                breathLabel.textContent = '';
+                lastFrameTime = performance.now();
+            }, breathDurationMs);
+        }
+
+        function tick(now) {
+            if (!isPlaying) return;
+
+            var dt = now - lastFrameTime;
+            lastFrameTime = now;
+            if (dt > 250) dt = 250;
+
+            if (!isBreathing) {
+                var nextBreath = breathPositions[currentBreathIndex];
+                if (nextBreath !== undefined && timeInPhase >= nextBreath) {
+                    beginBreath();
+                } else {
+                    timeInPhase += dt;
+                    var progress = Math.min(timeInPhase / climbDurationMs, 1);
+
+                    if (isAscending) {
+                        currentFreq = runStartFreq * Math.pow(runEndFreq / runStartFreq, progress);
+                        if (progress >= 1) {
+                            currentFreq = runEndFreq;
+                        }
+                    } else {
+                        currentFreq = runEndFreq * Math.pow(runStartFreq / runEndFreq, progress);
+                        if (progress >= 1) {
+                            currentFreq = runStartFreq;
+                            isAscending = true;
+                            timeInPhase = 0;
+                            currentBreathIndex = 0;
+                            document.getElementById('descendBtn').textContent = 'Begin Descent';
+                            document.getElementById('descendBtn').style.background = '#6f8b47';
+                            document.getElementById('modeIndicator').textContent = 'Ascending';
+                        }
+                    }
+                    setVoiceFreq(currentFreq);
+                }
+            }
+
+            var n = semitoneToNote(freqToSemitone(currentFreq));
+            document.getElementById('currentNote').textContent = n.note + n.octave;
+            document.getElementById('currentFreq').textContent = Math.round(currentFreq) + ' Hz';
+            if (numBreathsRun > 0) {
+                document.getElementById('breathCounter').textContent = 'Breath ' + Math.min(currentBreathIndex, numBreathsRun) + ' / ' + numBreathsRun + ' this stroke';
+            }
+
+            animationId = requestAnimationFrame(tick);
+        }
+
+        function switchTab(tab) {
+            var sirenPanel = document.getElementById('sirenPanel');
+            var pitchPanel = document.getElementById('pitchPanel');
+            var sirenTab = document.getElementById('sirenTab');
+            var pitchTab = document.getElementById('pitchTab');
+            if (tab === 'siren') {
+                sirenPanel.classList.remove('hidden');
+                pitchPanel.classList.add('hidden');
+                sirenTab.classList.add('active');
+                pitchTab.classList.remove('active');
+                if (listening) stopListening();
+            } else {
+                sirenPanel.classList.add('hidden');
+                pitchPanel.classList.remove('hidden');
+                sirenTab.classList.remove('active');
+                pitchTab.classList.add('active');
+                if (isPlaying) stopSiren();
+            }
+        }
+
+        function toggleListening() {
+            if (listening) stopListening(); else startListening();
+        }
+
+        function startListening() {
+            var errEl = document.getElementById('micError');
+            errEl.classList.add('hidden');
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                errEl.textContent = 'Microphone unavailable. On iOS, this page must be opened over HTTPS (or as a saved web app) for mic access.';
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            var ctx = initAudio();
+            navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+                .then(function(stream) {
+                    micStream = stream;
+                    var source = ctx.createMediaStreamSource(stream);
+                    analyser = ctx.createAnalyser();
+                    analyser.fftSize = 2048;
+                    source.connect(analyser);
+                    pitchBuf = new Float32Array(analyser.fftSize);
+                    listening = true;
+                    document.getElementById('listenBtn').textContent = 'Stop Listening';
+                    document.getElementById('detectedFreq').textContent = 'Listening…';
+                    pitchLoop();
+                })
+                .catch(function(err) {
+                    errEl.textContent = 'Mic access denied or unavailable: ' + err.message;
+                    errEl.classList.remove('hidden');
+                });
+        }
+
+        function stopListening() {
+            listening = false;
+            if (pitchRafId) { cancelAnimationFrame(pitchRafId); pitchRafId = null; }
+            if (micStream) {
+                micStream.getTracks().forEach(function(t) { t.stop(); });
+                micStream = null;
+            }
+            analyser = null;
+            document.getElementById('listenBtn').textContent = 'Start Listening';
+            document.getElementById('detectedNote').textContent = '—';
+            document.getElementById('detectedFreq').textContent = 'Listening stopped';
+            document.getElementById('detectedCents').textContent = 'flat ← → sharp';
+            document.getElementById('centsNeedle').style.left = '50%';
+        }
+
+        function autoCorrelate(buf, sampleRate) {
+            var SIZE = buf.length;
+            var rms = 0;
+            for (var i = 0; i < SIZE; i++) rms += buf[i] * buf[i];
+            rms = Math.sqrt(rms / SIZE);
+            if (rms < 0.008) return -1;
+
+            var r1 = 0, r2 = SIZE - 1, thres = 0.2;
+            for (var i2 = 0; i2 < SIZE / 2; i2++) {
+                if (Math.abs(buf[i2]) < thres) { r1 = i2; break; }
+            }
+            for (var i3 = 1; i3 < SIZE / 2; i3++) {
+                if (Math.abs(buf[SIZE - i3]) < thres) { r2 = SIZE - i3; break; }
+            }
+            var b = buf.slice(r1, r2);
+            var N = b.length;
+            if (N < 32) return -1;
+
+            var c = new Array(N).fill(0);
+            for (var lag = 0; lag < N; lag++) {
+                for (var j = 0; j < N - lag; j++) {
+                    c[lag] += b[j] * b[j + lag];
+                }
+            }
+
+            var d = 0;
+            while (d < N - 1 && c[d] > c[d + 1]) d++;
+            var maxval = -1, maxpos = -1;
+            for (var k = d; k < N; k++) {
+                if (c[k] > maxval) { maxval = c[k]; maxpos = k; }
+            }
+            if (maxpos <= 0) return -1;
+            var T0 = maxpos;
+
+            var x1 = c[T0 - 1], x2 = c[T0], x3 = c[T0 + 1];
+            if (x3 !== undefined) {
+                var a = (x1 + x3 - 2 * x2) / 2;
+                var bq = (x3 - x1) / 2;
+                if (a) T0 = T0 - bq / (2 * a);
+            }
+            return sampleRate / T0;
+        }
+
+        var smoothedFreq = 0;
+
+        function pitchLoop() {
+            if (!listening || !analyser) return;
+            analyser.getFloatTimeDomainData(pitchBuf);
+            var f = autoCorrelate(pitchBuf, audioContext.sampleRate);
+
+            if (f > 40 && f < 2500) {
+                smoothedFreq = smoothedFreq ? (smoothedFreq * 0.6 + f * 0.4) : f;
+                var st = freqToSemitone(smoothedFreq);
+                var n = semitoneToNote(st);
+                var cents = Math.round((st - Math.round(st)) * 100);
+
+                document.getElementById('detectedNote').textContent = n.note + n.octave;
+                document.getElementById('detectedFreq').textContent = (Math.round(smoothedFreq * 10) / 10) + ' Hz';
+                document.getElementById('detectedCents').textContent = (cents === 0 ? 'in tune' : (cents > 0 ? '+' + cents + ' cents sharp' : cents + ' cents flat'));
+                var pct = 50 + cents;
+                document.getElementById('centsNeedle').style.left = Math.min(Math.max(pct, 0), 100) + '%';
+            }
+            pitchRafId = requestAnimationFrame(pitchLoop);
+        }
+
+        updateFromNote('start');
+        updateFromNote('end');
+    </script>
+</body>
+</html>

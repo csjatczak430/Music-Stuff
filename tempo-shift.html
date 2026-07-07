@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tempo Shift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #ffc840;
+    --orange: #ff6b35;
+    --red: #ff4444;
+    --bg: #0a0a0a;
+    --surface: #111;
+    --border: #1e1e1e;
+    --border-mid: #2a2a2a;
+    --text: #e8e0d0;
+    --muted: #555;
+    --dim: #333;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* grid bg */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,200,80,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,200,80,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 600px;
+    position: relative;
+    z-index: 1;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 12vw, 84px);
+    letter-spacing: 0.08em;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+
+  /* ── TEMPO DISPLAY ── */
+  .tempo-display {
+    background: var(--surface);
+    border: 1px solid #222;
+    border-top: 3px solid var(--gold);
+    padding: 28px 32px 24px;
+    margin-bottom: 6px;
+    position: relative;
+    overflow: hidden;
+    transition: border-top-color 0.3s;
+  }
+  .tempo-display.running { border-top-color: var(--orange); }
+  .tempo-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(255,200,64,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .tempo-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .tempo-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(96px, 22vw, 156px);
+    line-height: 1;
+    color: #fff;
+    letter-spacing: -0.02em;
+    transition: color 0.08s;
+    position: relative;
+    z-index: 1;
+  }
+  .tempo-number.flash { color: var(--gold); }
+
+  .tempo-unit {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: #3a3a3a;
+    text-transform: uppercase;
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* beat dots */
+  .beat-dots {
+    display: flex;
+    gap: 7px;
+    margin-top: 18px;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  .beat-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #1e1e1e;
+    transition: background 0.04s, box-shadow 0.04s;
+    flex-shrink: 0;
+  }
+  .beat-dot.beat-accent { background: #1e1e1e; }
+  .beat-dot.on {
+    background: var(--orange);
+    box-shadow: 0 0 8px var(--orange);
+  }
+  .beat-dot.accent.on {
+    background: var(--gold);
+    box-shadow: 0 0 10px var(--gold);
+  }
+
+  /* ── COUNTDOWN BAR ── */
+  .countdown-bar {
+    height: 3px;
+    background: #141414;
+    margin-bottom: 26px;
+    overflow: hidden;
+  }
+  .countdown-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--gold), var(--orange));
+    transition: width 0.08s linear;
+  }
+
+  /* ── SECTION LABELS ── */
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: #3a3a3a;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    margin-top: 22px;
+  }
+
+  /* ── RANGES ── */
+  .ranges-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .range-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .range-row.active-range {
+    border-color: var(--gold);
+    background: rgba(255,200,64,0.04);
+  }
+
+  .range-letter {
+    font-size: 10px;
+    color: var(--dim);
+    width: 14px;
+    flex-shrink: 0;
+    letter-spacing: 0.1em;
+  }
+
+  .range-inputs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .range-sep { color: #3a3a3a; font-size: 13px; }
+
+  input[type="number"] {
+    width: 62px;
+    background: #0d0d0d;
+    border: 1px solid var(--border-mid);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    padding: 6px 8px;
+    outline: none;
+    text-align: center;
+    -moz-appearance: textfield;
+    appearance: textfield;
+    border-radius: 0;
+  }
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type="number"]:focus { border-color: var(--gold); }
+
+  .bpm-tag { font-size: 10px; color: #2e2e2e; letter-spacing: 0.1em; }
+
+  .btn-remove {
+    background: none;
+    border: 1px solid #222;
+    color: #444;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-remove:hover { border-color: var(--red); color: var(--red); }
+  .btn-remove:disabled { opacity: 0.15; pointer-events: none; }
+
+  .btn-add {
+    background: none;
+    border: 1px dashed #222;
+    color: #3a3a3a;
+    width: 100%;
+    padding: 10px;
+    cursor: pointer;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-add:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── OPTIONS ROW ── */
+  .options-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .interval-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 11px 12px;
+    flex: 1;
+  }
+  .interval-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    flex: 1;
+    white-space: nowrap;
+  }
+  .interval-unit {
+    font-size: 10px;
+    color: #3a3a3a;
+    letter-spacing: 0.1em;
+  }
+  #intervalInput { width: 60px; }
+
+  .sound-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 11px 14px;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 0.15s;
+  }
+  .sound-box:hover { border-color: #333; }
+  .sound-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .toggle {
+    width: 30px;
+    height: 17px;
+    border-radius: 9px;
+    background: #1a1a1a;
+    border: 1px solid #2e2e2e;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--gold); border-color: var(--gold); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: #444;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .toggle.on::after { transform: translateX(13px); background: #0a0a0a; }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    gap: 6px;
+    margin-top: 22px;
+  }
+
+  .btn-start {
+    flex: 1;
+    background: var(--gold);
+    border: none;
+    color: #0a0a0a;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.1em;
+    padding: 15px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-start:hover { background: #ffd060; }
+
+  .btn-stop {
+    flex: 1;
+    background: #141414;
+    border: 1px solid var(--red);
+    color: var(--red);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.1em;
+    padding: 15px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn-stop:hover { background: var(--red); color: #fff; }
+
+  .btn-next {
+    background: #141414;
+    border: 1px solid #2a2a2a;
+    color: #666;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.1em;
+    padding: 15px 20px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .btn-next:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* ── STATUS ── */
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .status-left { display: flex; align-items: center; gap: 8px; }
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    transition: background 0.3s;
+  }
+  .status-dot.active {
+    background: var(--orange);
+    box-shadow: 0 0 8px var(--orange);
+    animation: pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .status-text {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: #3a3a3a;
+    text-transform: uppercase;
+  }
+  .change-count {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: #2e2e2e;
+    text-transform: uppercase;
+  }
+
+  /* hidden when stopped */
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Tempo Shift</h1>
+  <p class="subtitle">Random tempo trainer</p>
+
+  <!-- DISPLAY -->
+  <div class="tempo-display" id="tempoDisplay">
+    <div class="tempo-label">Current Tempo</div>
+    <div class="tempo-number" id="tempoNumber">—</div>
+    <div class="tempo-unit">beats per minute</div>
+    <div class="beat-dots" id="beatDots">
+      <div class="beat-dot accent" data-beat="0"></div>
+      <div class="beat-dot" data-beat="1"></div>
+      <div class="beat-dot" data-beat="2"></div>
+      <div class="beat-dot" data-beat="3"></div>
+    </div>
+  </div>
+
+  <!-- COUNTDOWN -->
+  <div class="countdown-bar"><div class="countdown-fill" id="countdownFill"></div></div>
+
+  <!-- RANGES -->
+  <div class="section-label">Tempo Ranges</div>
+  <div class="ranges-list" id="rangesList"></div>
+  <button class="btn-add" id="btnAdd">+ Add Range</button>
+
+  <!-- OPTIONS -->
+  <div class="section-label">Options</div>
+  <div class="options-row">
+    <div class="interval-box">
+      <span class="interval-label">Change every</span>
+      <input type="number" id="intervalInput" value="8" min="1" max="300">
+      <span class="interval-unit">sec</span>
+    </div>
+    <div class="sound-box" id="soundBox">
+      <span class="sound-label">Click</span>
+      <div class="toggle on" id="soundToggle"></div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="controls">
+    <button class="btn-start" id="btnStart">Start</button>
+    <button class="btn-stop hidden" id="btnStop">Stop</button>
+    <button class="btn-next hidden" id="btnNext">→</button>
+  </div>
+
+  <!-- STATUS -->
+  <div class="status-row">
+    <div class="status-left">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-text" id="statusText">Stopped</span>
+    </div>
+    <span class="change-count" id="changeCount"></span>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let ranges = [{ min: 60, max: 140, id: 1 }];
+let nextId = 2;
+let running = false;
+let currentTempo = null;
+let activeRangeIdx = null;
+let changeCount = 0;
+let soundOn = true;
+
+// Timers
+let changeTimer = null;
+let countdownInterval = null;
+let countdownStart = 0;
+let countdownDuration = 0;
+
+// ─── Web Audio ────────────────────────────────────────────────────────────────
+let audioCtx = null;
+let schedulerTimer = null;
+let nextClickTime = 0;
+let schedulerBeat = 0;
+let currentBpm = 120;
+let visualBeat = -1;
+
+function getCtx() {
+  if (!audioCtx || audioCtx.state === 'closed') {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioCtx;
+}
+
+async function resumeCtx() {
+  const ctx = getCtx();
+  if (ctx.state === 'suspended') await ctx.resume();
+  return ctx;
+}
+
+function scheduleClick(ctx, time, isAccent) {
+  if (!soundOn) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = 'sine';
+  osc.frequency.value = isAccent ? 1400 : 900;
+  gain.gain.setValueAtTime(isAccent ? 0.55 : 0.3, time);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
+  osc.start(time);
+  osc.stop(time + 0.06);
+}
+
+function runScheduler() {
+  const ctx = getCtx();
+  const scheduleAhead = 0.18;
+  while (nextClickTime < ctx.currentTime + scheduleAhead) {
+    const isAccent = schedulerBeat % 4 === 0;
+    scheduleClick(ctx, nextClickTime, isAccent);
+    // Visual beat via timeout
+    const beat = schedulerBeat % 4;
+    const delayMs = Math.max(0, (nextClickTime - ctx.currentTime) * 1000);
+    setTimeout(() => {
+      if (running) flashBeatDot(beat);
+    }, delayMs);
+    schedulerBeat++;
+    nextClickTime += 60.0 / currentBpm;
+  }
+}
+
+async function startMetronome(bpm) {
+  const ctx = await resumeCtx();
+  currentBpm = bpm;
+  schedulerBeat = 0;
+  nextClickTime = ctx.currentTime + 0.05;
+  if (schedulerTimer) clearInterval(schedulerTimer);
+  schedulerTimer = setInterval(runScheduler, 25);
+}
+
+function stopMetronome() {
+  if (schedulerTimer) { clearInterval(schedulerTimer); schedulerTimer = null; }
+}
+
+function updateMetronomeTempo(bpm) {
+  currentBpm = bpm;
+  schedulerBeat = 0; // reset accent
+}
+
+// ─── Beat dots ────────────────────────────────────────────────────────────────
+let dotFlashTimer = null;
+function flashBeatDot(beat) {
+  const dots = document.querySelectorAll('.beat-dot');
+  dots.forEach(d => d.classList.remove('on'));
+  if (beat >= 0 && beat < dots.length) {
+    dots[beat].classList.add('on');
+  }
+  if (dotFlashTimer) clearTimeout(dotFlashTimer);
+  dotFlashTimer = setTimeout(() => {
+    dots.forEach(d => d.classList.remove('on'));
+  }, 120);
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pickTempo() {
+  const valid = ranges.filter(r => r.min > 0 && r.max > 0 && r.max >= r.min);
+  if (!valid.length) return { tempo: 120, rangeIdx: 0 };
+  const pick = valid[Math.floor(Math.random() * valid.length)];
+  const rangeIdx = ranges.indexOf(pick);
+  return { tempo: randInt(pick.min, pick.max), rangeIdx };
+}
+
+// ─── Countdown bar ───────────────────────────────────────────────────────────
+function startCountdownBar(durationSec) {
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownStart = Date.now();
+  countdownDuration = durationSec * 1000;
+  const fill = document.getElementById('countdownFill');
+  fill.style.width = '100%';
+  countdownInterval = setInterval(() => {
+    const elapsed = Date.now() - countdownStart;
+    const pct = Math.max(0, 1 - elapsed / countdownDuration);
+    fill.style.width = (pct * 100) + '%';
+  }, 50);
+}
+
+// ─── Apply new tempo ─────────────────────────────────────────────────────────
+function applyTempo(tempo, rangeIdx, isFirst) {
+  currentTempo = tempo;
+  activeRangeIdx = rangeIdx;
+  if (!isFirst) changeCount++;
+
+  // visual
+  const num = document.getElementById('tempoNumber');
+  num.textContent = tempo;
+  num.classList.add('flash');
+  setTimeout(() => num.classList.remove('flash'), 180);
+
+  updateMetronomeTempo(tempo);
+  updateRangeHighlight();
+  updateChangeCount();
+  const intervalSec = parseInt(document.getElementById('intervalInput').value) || 8;
+  startCountdownBar(intervalSec);
+}
+
+// ─── Start / Stop / Next ─────────────────────────────────────────────────────
+async function start() {
+  running = true;
+  changeCount = 0;
+  const { tempo, rangeIdx } = pickTempo();
+  applyTempo(tempo, rangeIdx, true);
+
+  await startMetronome(tempo);
+
+  const intervalSec = parseInt(document.getElementById('intervalInput').value) || 8;
+  if (changeTimer) clearInterval(changeTimer);
+  changeTimer = setInterval(() => {
+    const { tempo: t, rangeIdx: ri } = pickTempo();
+    applyTempo(t, ri, false);
+  }, intervalSec * 1000);
+
+  // UI
+  document.getElementById('tempoDisplay').classList.add('running');
+  document.getElementById('btnStart').classList.add('hidden');
+  document.getElementById('btnStop').classList.remove('hidden');
+  document.getElementById('btnNext').classList.remove('hidden');
+  document.getElementById('statusDot').classList.add('active');
+  document.getElementById('statusText').textContent = 'Running';
+  document.getElementById('countdownFill').style.width = '100%';
+}
+
+function stop() {
+  running = false;
+  clearInterval(changeTimer); changeTimer = null;
+  clearInterval(countdownInterval); countdownInterval = null;
+  stopMetronome();
+
+  currentTempo = null;
+  activeRangeIdx = null;
+  document.getElementById('tempoNumber').textContent = '—';
+  document.getElementById('countdownFill').style.width = '0%';
+  document.querySelectorAll('.beat-dot').forEach(d => d.classList.remove('on'));
+
+  document.getElementById('tempoDisplay').classList.remove('running');
+  document.getElementById('btnStart').classList.remove('hidden');
+  document.getElementById('btnStop').classList.add('hidden');
+  document.getElementById('btnNext').classList.add('hidden');
+  document.getElementById('statusDot').classList.remove('active');
+  document.getElementById('statusText').textContent = 'Stopped';
+  updateRangeHighlight();
+  updateChangeCount();
+}
+
+function next() {
+  if (!running) return;
+  clearInterval(changeTimer);
+  const { tempo, rangeIdx } = pickTempo();
+  applyTempo(tempo, rangeIdx, false);
+  const intervalSec = parseInt(document.getElementById('intervalInput').value) || 8;
+  changeTimer = setInterval(() => {
+    const { tempo: t, rangeIdx: ri } = pickTempo();
+    applyTempo(t, ri, false);
+  }, intervalSec * 1000);
+}
+
+// ─── Range UI ─────────────────────────────────────────────────────────────────
+function updateRangeHighlight() {
+  document.querySelectorAll('.range-row').forEach((row, i) => {
+    if (running && i === activeRangeIdx) row.classList.add('active-range');
+    else row.classList.remove('active-range');
+  });
+}
+
+function updateChangeCount() {
+  const el = document.getElementById('changeCount');
+  el.textContent = changeCount > 0 ? `${changeCount} change${changeCount !== 1 ? 's' : ''}` : '';
+}
+
+function renderRanges() {
+  const list = document.getElementById('rangesList');
+  list.innerHTML = '';
+  ranges.forEach((r, i) => {
+    const row = document.createElement('div');
+    row.className = 'range-row' + (running && i === activeRangeIdx ? ' active-range' : '');
+    row.dataset.id = r.id;
+    row.innerHTML = `
+      <div class="range-letter">${String.fromCharCode(65 + i)}</div>
+      <div class="range-inputs">
+        <input type="number" class="range-min" value="${r.min}" min="20" max="300" placeholder="60">
+        <span class="range-sep">–</span>
+        <input type="number" class="range-max" value="${r.max}" min="20" max="300" placeholder="160">
+        <span class="bpm-tag">bpm</span>
+      </div>
+      <button class="btn-remove" ${ranges.length === 1 ? 'disabled' : ''}>×</button>
+    `;
+    row.querySelector('.range-min').addEventListener('input', e => {
+      r.min = parseInt(e.target.value) || 0;
+    });
+    row.querySelector('.range-max').addEventListener('input', e => {
+      r.max = parseInt(e.target.value) || 0;
+    });
+    row.querySelector('.btn-remove').addEventListener('click', () => {
+      if (ranges.length > 1) {
+        ranges = ranges.filter(x => x.id !== r.id);
+        renderRanges();
+      }
+    });
+    list.appendChild(row);
+  });
+}
+
+// ─── Sound toggle ─────────────────────────────────────────────────────────────
+document.getElementById('soundBox').addEventListener('click', () => {
+  soundOn = !soundOn;
+  const tog = document.getElementById('soundToggle');
+  if (soundOn) tog.classList.add('on');
+  else tog.classList.remove('on');
+});
+
+// ─── Wire up buttons ──────────────────────────────────────────────────────────
+document.getElementById('btnStart').addEventListener('click', start);
+document.getElementById('btnStop').addEventListener('click', stop);
+document.getElementById('btnNext').addEventListener('click', next);
+document.getElementById('btnAdd').addEventListener('click', () => {
+  ranges.push({ min: 80, max: 160, id: nextId++ });
+  renderRanges();
+});
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+renderRanges();
+</script>
+</body>
+</html>

@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progressive Metronome</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f0e8;
+    --ink: #1a1612;
+    --mid: #6b5f52;
+    --accent: #c0392b;
+    --accent2: #e67e22;
+    --line: rgba(26,22,18,0.12);
+    --mono: 'DM Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--mono);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px 16px;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 39px,
+      var(--line) 39px,
+      var(--line) 40px
+    );
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: min(480px, 100%);
+  }
+
+  .header {
+    text-align: center;
+    padding-bottom: 24px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 24px;
+  }
+
+  .title {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(28px, 7vw, 44px);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+
+  .subtitle {
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-top: 6px;
+  }
+
+  .bpm-display {
+    text-align: center;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 24px;
+  }
+
+  .bpm-number {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(72px, 22vw, 110px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    transition: color 0.1s;
+  }
+
+  .bpm-number.flash-beat { color: var(--accent2); }
+  .bpm-number.flash-downbeat { color: var(--accent); }
+
+  .bpm-unit {
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-top: 4px;
+  }
+
+  .beat-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .beat-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--line);
+    border: 2px solid rgba(26,22,18,0.2);
+    transition: background 0.05s, border-color 0.05s, transform 0.05s;
+  }
+
+  .beat-dot.active-beat {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    transform: scale(1.3);
+  }
+
+  .beat-dot.active-downbeat {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.5);
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--mid);
+    margin-bottom: 8px;
+  }
+
+  .control-group { margin-bottom: 18px; }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: white;
+    border: 1.5px solid rgba(26,22,18,0.18);
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+
+  .control-row input[type="number"] {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 100%;
+    text-align: center;
+    -moz-appearance: textfield;
+  }
+
+  .control-row input[type="number"]::-webkit-inner-spin-button,
+  .control-row input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+  }
+
+  .adj-btn {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--mid);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    user-select: none;
+  }
+  .adj-btn:hover { color: var(--ink); }
+  .adj-btn:active { color: var(--accent); }
+
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .unit-toggle {
+    display: flex;
+    gap: 4px;
+    margin-top: 6px;
+  }
+
+  .unit-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1.5px solid rgba(26,22,18,0.18);
+    background: white;
+    color: var(--mid);
+    cursor: pointer;
+    flex: 1;
+    text-align: center;
+  }
+
+  .unit-btn.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--bg);
+  }
+
+  .progress-section {
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+  }
+
+  .progress-bar-wrap {
+    height: 4px;
+    background: rgba(26,22,18,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent2);
+    border-radius: 2px;
+    transition: width 0.1s linear;
+    width: 0%;
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--mid);
+    margin-top: 6px;
+  }
+
+  .main-btn {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 18px 24px;
+    border-radius: 8px;
+    border: 2px solid var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s;
+  }
+
+  .main-btn:active { transform: scale(0.98); }
+  .main-btn.running { background: var(--accent); border-color: var(--accent); }
+
+  .reset-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--mid);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 14px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    display: block;
+    width: 100%;
+  }
+  .reset-btn:hover { color: var(--ink); }
+
+  .status {
+    font-size: 11px;
+    color: var(--mid);
+    text-align: center;
+    margin-top: 16px;
+    min-height: 16px;
+  }
+  .status span { color: var(--ink); font-weight: 500; }
+
+  /* Toggle switch */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border: 1.5px solid rgba(26,22,18,0.18);
+    border-radius: 6px;
+    padding: 10px 12px;
+  }
+  .toggle-label {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    font-weight: 500;
+  }
+  .toggle-sub {
+    font-size: 10px;
+    color: var(--mid);
+    margin-top: 2px;
+  }
+  .toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: rgba(26,22,18,0.2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle-switch.on {
+    background: var(--accent);
+  }
+  .toggle-switch.on::after {
+    transform: translateX(20px);
+  }
+
+  /* Preset buttons */
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .preset-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 10px 6px;
+    border-radius: 5px;
+    border: 1.5px solid rgba(26,22,18,0.18);
+    background: white;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    line-height: 1.2;
+  }
+  .preset-btn:hover {
+    border-color: var(--ink);
+  }
+  .preset-btn.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--bg);
+  }
+
+  /* Beat emphasis selector */
+  .beat-emphasis-row {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  .beat-chk {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(26,22,18,0.25);
+    background: white;
+    color: var(--mid);
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .beat-chk.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title">Progressive<br>Metronome</div>
+    <div class="subtitle">4/4 Time · Gradual Tempo Increase</div>
+  </div>
+
+  <div class="bpm-display">
+    <div class="bpm-number" id="bpmDisplay">120</div>
+    <div class="bpm-unit">BPM</div>
+    <div class="beat-row">
+      <div class="beat-dot" id="dot0"></div>
+      <div class="beat-dot" id="dot1"></div>
+      <div class="beat-dot" id="dot2"></div>
+      <div class="beat-dot" id="dot3"></div>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <div class="section-label">Starting BPM</div>
+    <div class="control-row">
+      <button class="adj-btn" onclick="adjustVal('startBpm', -5)">−</button>
+      <input type="number" id="startBpm" value="120" min="20" max="300">
+      <button class="adj-btn" onclick="adjustVal('startBpm', 5)">+</button>
+    </div>
+  </div>
+
+  <div class="controls-grid">
+    <div class="control-group">
+      <div class="section-label">Increment every</div>
+      <div class="control-row">
+        <button class="adj-btn" onclick="adjustVal('intervalVal', -1)">−</button>
+        <input type="number" id="intervalVal" value="4" min="1" max="999">
+        <button class="adj-btn" onclick="adjustVal('intervalVal', 1)">+</button>
+      </div>
+      <div class="unit-toggle">
+        <button class="unit-btn active" id="unitBars" onclick="setUnit('bars')">Bars</button>
+        <button class="unit-btn" id="unitSecs" onclick="setUnit('secs')">Secs</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <div class="section-label">Increase by (BPM)</div>
+      <div class="control-row">
+        <button class="adj-btn" onclick="adjustVal('incrementAmount', -1)">−</button>
+        <input type="number" id="incrementAmount" value="1" min="1" max="50">
+        <button class="adj-btn" onclick="adjustVal('incrementAmount', 1)">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <div class="section-label">Sound</div>
+    <div class="preset-grid">
+      <button class="preset-btn active" data-preset="cowbell">Cowbell</button>
+      <button class="preset-btn" data-preset="kick">Kick<br>Drum</button>
+      <button class="preset-btn" data-preset="snare">Snare</button>
+      <button class="preset-btn" data-preset="hihat">Hi-Hat</button>
+      <button class="preset-btn" data-preset="woodblock">Wood<br>Block</button>
+      <button class="preset-btn" data-preset="click">Click</button>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Randomize sound</div>
+        <div class="toggle-sub">Pick a new sound at every tempo change</div>
+      </div>
+      <div class="toggle-switch" id="randomizeToggle"></div>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <div class="section-label">Emphasize beats</div>
+    <div class="beat-emphasis-row">
+      <button class="beat-chk active" data-beat="0">1</button>
+      <button class="beat-chk" data-beat="1">2</button>
+      <button class="beat-chk" data-beat="2">3</button>
+      <button class="beat-chk" data-beat="3">4</button>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <div class="section-label">Target BPM</div>
+    <div class="control-row">
+      <button class="adj-btn" onclick="adjustVal('targetBpm', -5)">−</button>
+      <input type="number" id="targetBpm" value="160" min="20" max="300">
+      <button class="adj-btn" onclick="adjustVal('targetBpm', 5)">+</button>
+    </div>
+  </div>
+
+  <div class="progress-section">
+    <div class="section-label">Progress</div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-meta">
+      <span id="progressLeft">—</span>
+      <span id="progressRight">—</span>
+    </div>
+  </div>
+
+  <button class="main-btn" id="mainBtn">Start</button>
+  <button class="reset-btn" id="resetBtn">Reset</button>
+  <div class="status" id="status">Press Start to begin.</div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ─── State ───────────────────────────────────────────────────────────────────
+  let audioCtx = null;
+  let masterGain = null;
+  let isPlaying = false;
+  let currentBpm = 120;
+  let beat = 0;
+  let barCount = 0;
+  let intervalUnit = 'bars';
+
+  let nextBeatTime = 0;
+  let schedulerTimer = null;
+  let secsModeTimer = null;
+  const LOOKAHEAD = 0.15;
+  const SCHED_MS = 25;
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+  function $(id) { return document.getElementById(id); }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function getStartBpm() { return clamp(parseInt($('startBpm').value) || 120, 20, 300); }
+  function getTargetBpm() { return clamp(parseInt($('targetBpm').value) || 160, 20, 300); }
+  function getIntervalVal() { return clamp(parseInt($('intervalVal').value) || 4, 1, 999); }
+  function getIncrementAmount() { return clamp(parseInt($('incrementAmount').value) || 1, 1, 50); }
+
+  window.adjustVal = function(id, delta) {
+    const el = $(id);
+    let v = (parseInt(el.value) || 0) + delta;
+    const min = parseInt(el.min || '-9999');
+    const max = parseInt(el.max || '9999');
+    el.value = Math.max(min, Math.min(max, v));
+  };
+
+  window.setUnit = function(u) {
+    intervalUnit = u;
+    $('unitBars').classList.toggle('active', u === 'bars');
+    $('unitSecs').classList.toggle('active', u === 'secs');
+  };
+
+  // ─── Audio ───────────────────────────────────────────────────────────────────
+  function initAudio() {
+    if (audioCtx) return Promise.resolve();
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) { alert('Web Audio not supported in this browser.'); return Promise.reject(); }
+    audioCtx = new Ctx();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 1.0;
+    masterGain.connect(audioCtx.destination);
+    return audioCtx.resume();
+  }
+
+  // ─── Sound Library ───────────────────────────────────────────────────────────
+  // Each sound is a function(time, isEmphasized, ctx, dest).
+  // ALL sounds use pure oscillators only — no white noise — to avoid static.
+
+  function adsr(ctx, dest, time, attack, decay, peak) {
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, time);
+    g.gain.linearRampToValueAtTime(peak, time + attack);
+    g.gain.exponentialRampToValueAtTime(0.001, time + attack + decay);
+    g.connect(dest);
+    return g;
+  }
+
+  // Helper for additive (multi-partial) sounds — e.g. bells, marimbas
+  function partial(ctx, dest, time, freq, dur, amp, type) {
+    const o = ctx.createOscillator();
+    o.type = type || 'sine';
+    o.frequency.value = freq;
+    const env = adsr(ctx, dest, time, 0.002, dur, amp);
+    o.connect(env);
+    o.start(time); o.stop(time + dur + 0.02);
+  }
+
+  const SOUNDS = [
+    // 1. Cowbell — two square waves through bandpass
+    function cowbell(t, dn, ctx, out) {
+      const dur = dn ? 0.5 : 0.35;
+      const f = dn ? 540 : 800;
+      const o1 = ctx.createOscillator(); o1.type='square'; o1.frequency.value=f;
+      const o2 = ctx.createOscillator(); o2.type='square'; o2.frequency.value=f*1.48;
+      const bp = ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2200; bp.Q.value=4;
+      const env = adsr(ctx, out, t, 0.002, dur, dn?0.5:0.35);
+      o1.connect(bp); o2.connect(bp); bp.connect(env);
+      o1.start(t); o2.start(t); o1.stop(t+dur+.01); o2.stop(t+dur+.01);
+    },
+
+    // 2. Kick drum — sine pitch sweep
+    function kick(t, dn, ctx, out) {
+      const dur = 0.4;
+      const o = ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(dn?160:120, t);
+      o.frequency.exponentialRampToValueAtTime(40, t+0.15);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.9:0.7);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 3. Snare (tonal version) — two oscillators tuned for snap
+    function snare(t, dn, ctx, out) {
+      const dur = 0.15;
+      const o1 = ctx.createOscillator(); o1.type='triangle';
+      o1.frequency.setValueAtTime(dn?330:280, t);
+      o1.frequency.exponentialRampToValueAtTime(100, t+0.1);
+      const o2 = ctx.createOscillator(); o2.type='square';
+      o2.frequency.setValueAtTime(dn?660:550, t);
+      o2.frequency.exponentialRampToValueAtTime(220, t+0.08);
+      const g2 = ctx.createGain(); g2.gain.value = 0.3;
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.6:0.45);
+      o1.connect(env); o2.connect(g2); g2.connect(env);
+      o1.start(t); o2.start(t); o1.stop(t+dur+.01); o2.stop(t+dur+.01);
+    },
+
+    // 4. Hi-hat (tonal) — short high square click
+    function hihat(t, dn, ctx, out) {
+      const dur = dn ? 0.08 : 0.04;
+      const o = ctx.createOscillator(); o.type='square';
+      o.frequency.value = dn?5000:6500;
+      const bp = ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=8000; bp.Q.value=2;
+      const env = adsr(ctx, out, t, 0.0005, dur, dn?0.3:0.2);
+      o.connect(bp); bp.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 5. Woodblock — short sine
+    function woodblock(t, dn, ctx, out) {
+      const dur = 0.08;
+      const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=dn?1200:900;
+      const env = adsr(ctx, out, t, 0.0005, dur, dn?0.6:0.45);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 6. Click — sharp short square
+    function click(t, dn, ctx, out) {
+      const dur = 0.02;
+      const o = ctx.createOscillator(); o.type='square'; o.frequency.value=dn?2000:1500;
+      const env = adsr(ctx, out, t, 0.0003, dur, dn?0.5:0.35);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 7. Low tom
+    function lowTom(t, dn, ctx, out) {
+      const dur = 0.35;
+      const o = ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(dn?220:170, t);
+      o.frequency.exponentialRampToValueAtTime(80, t+0.2);
+      const env = adsr(ctx, out, t, 0.002, dur, dn?0.7:0.55);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 8. High tom
+    function highTom(t, dn, ctx, out) {
+      const dur = 0.25;
+      const o = ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(dn?440:350, t);
+      o.frequency.exponentialRampToValueAtTime(150, t+0.15);
+      const env = adsr(ctx, out, t, 0.002, dur, dn?0.6:0.45);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 9. Clave — sharp high sine
+    function clave(t, dn, ctx, out) {
+      const dur = 0.05;
+      const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=dn?2500:2200;
+      const env = adsr(ctx, out, t, 0.0003, dur, dn?0.6:0.45);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 10. Marimba — sine with overtone
+    function marimba(t, dn, ctx, out) {
+      const dur = 0.4;
+      const f = dn?392:523;
+      partial(ctx, out, t, f, dur, dn?0.6:0.5, 'sine');
+      partial(ctx, out, t, f*4, dur*0.5, (dn?0.6:0.5)*0.3, 'sine');
+    },
+
+    // 11. Bell — multiple inharmonic sine partials
+    function bell(t, dn, ctx, out) {
+      const dur = 1.0;
+      const f = dn?660:880;
+      const partials = [1, 2.76, 5.4, 8.93];
+      const amps = [1, 0.5, 0.3, 0.15];
+      for (let i = 0; i < partials.length; i++) {
+        partial(ctx, out, t, f*partials[i], dur*(1-i*0.15), (dn?0.35:0.25)*amps[i], 'sine');
+      }
+    },
+
+    // 12. Conga
+    function conga(t, dn, ctx, out) {
+      const dur = 0.2;
+      const o = ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(dn?330:260, t);
+      o.frequency.exponentialRampToValueAtTime(140, t+0.1);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.6:0.45);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 13. Lip pop
+    function pop(t, dn, ctx, out) {
+      const dur = 0.08;
+      const o = ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(dn?180:240, t);
+      o.frequency.exponentialRampToValueAtTime(60, t+0.04);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.7:0.55);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 14. Triangle bell (high pure)
+    function triangleBell(t, dn, ctx, out) {
+      const dur = 0.8;
+      const f = dn?4200:5400;
+      const o = ctx.createOscillator(); o.type='triangle'; o.frequency.value=f;
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.25:0.18);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 15. Bongo
+    function bongo(t, dn, ctx, out) {
+      const dur = 0.15;
+      const o = ctx.createOscillator(); o.type='triangle';
+      o.frequency.setValueAtTime(dn?280:220, t);
+      o.frequency.exponentialRampToValueAtTime(110, t+0.08);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.55:0.4);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 16. Sci-fi blip (rising)
+    function blip(t, dn, ctx, out) {
+      const dur = 0.1;
+      const o = ctx.createOscillator(); o.type='sawtooth';
+      o.frequency.setValueAtTime(dn?600:400, t);
+      o.frequency.linearRampToValueAtTime(dn?1800:1200, t+0.08);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.4:0.28);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 17. Synth pluck
+    function pluck(t, dn, ctx, out) {
+      const dur = 0.3;
+      const f = dn?196:294;
+      const o = ctx.createOscillator(); o.type='sawtooth'; o.frequency.value=f;
+      const lp = ctx.createBiquadFilter(); lp.type='lowpass';
+      lp.frequency.setValueAtTime(3000, t);
+      lp.frequency.exponentialRampToValueAtTime(400, t+0.2);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.4:0.3);
+      o.connect(lp); lp.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 18. Crystal ping
+    function crystal(t, dn, ctx, out) {
+      const dur = 0.6;
+      const f = dn?1320:1760;
+      partial(ctx, out, t, f, dur, dn?0.3:0.22, 'sine');
+      partial(ctx, out, t, f*2.01, dur*0.7, (dn?0.3:0.22)*0.5, 'sine');
+    },
+
+    // 19. Gong — low inharmonic
+    function gong(t, dn, ctx, out) {
+      const dur = 1.2;
+      const f = dn?80:110;
+      const partials = [1, 1.7, 2.4, 3.9];
+      for (let i = 0; i < partials.length; i++) {
+        partial(ctx, out, t, f*partials[i], dur*(1-i*0.1), (dn?0.3:0.22)/(i+1), 'sine');
+      }
+    },
+
+    // 20. Plastic tick
+    function tick(t, dn, ctx, out) {
+      const dur = 0.03;
+      const o = ctx.createOscillator(); o.type='square'; o.frequency.value=dn?3000:2200;
+      const env = adsr(ctx, out, t, 0.0005, dur, dn?0.35:0.25);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 21. Sub bass thump
+    function subThump(t, dn, ctx, out) {
+      const dur = 0.5;
+      const o = ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(dn?80:60, t);
+      o.frequency.exponentialRampToValueAtTime(30, t+0.3);
+      const env = adsr(ctx, out, t, 0.005, dur, dn?0.9:0.7);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 22. Glassy pluck
+    function glassPluck(t, dn, ctx, out) {
+      const dur = 0.4;
+      const f = dn?880:1320;
+      partial(ctx, out, t, f, dur, dn?0.35:0.25, 'triangle');
+      partial(ctx, out, t, f*3.01, dur*0.6, (dn?0.35:0.25)*0.3, 'sine');
+    },
+
+    // 23. Rubber band
+    function rubber(t, dn, ctx, out) {
+      const dur = 0.2;
+      const o = ctx.createOscillator(); o.type='sawtooth';
+      o.frequency.setValueAtTime(dn?330:440, t);
+      o.frequency.exponentialRampToValueAtTime(dn?110:165, t+0.15);
+      const lp = ctx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1500;
+      const env = adsr(ctx, out, t, 0.002, dur, dn?0.4:0.3);
+      o.connect(lp); lp.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 24. Whistle
+    function whistle(t, dn, ctx, out) {
+      const dur = 0.2;
+      const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=dn?1800:2400;
+      const env = adsr(ctx, out, t, 0.01, dur, dn?0.3:0.2);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 25. FM bell
+    function fmBell(t, dn, ctx, out) {
+      const dur = 0.7;
+      const carrier = ctx.createOscillator(); carrier.type='sine';
+      carrier.frequency.value = dn?440:660;
+      const mod = ctx.createOscillator(); mod.type='sine';
+      mod.frequency.value = dn?630:945;
+      const modGain = ctx.createGain(); modGain.gain.value=800;
+      const modEnv = ctx.createGain();
+      modEnv.gain.setValueAtTime(1, t);
+      modEnv.gain.exponentialRampToValueAtTime(0.01, t+0.4);
+      mod.connect(modGain); modGain.connect(modEnv); modEnv.connect(carrier.frequency);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.3:0.22);
+      carrier.connect(env);
+      carrier.start(t); mod.start(t);
+      carrier.stop(t+dur+.01); mod.stop(t+dur+.01);
+    },
+
+    // 26. Cuíca squeak (rising)
+    function squeak(t, dn, ctx, out) {
+      const dur = 0.18;
+      const o = ctx.createOscillator(); o.type='triangle';
+      o.frequency.setValueAtTime(dn?300:500, t);
+      o.frequency.linearRampToValueAtTime(dn?900:1400, t+0.1);
+      const env = adsr(ctx, out, t, 0.005, dur, dn?0.35:0.25);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 27. Wood thunk
+    function thunk(t, dn, ctx, out) {
+      const dur = 0.1;
+      const o = ctx.createOscillator(); o.type='sine';
+      o.frequency.setValueAtTime(dn?180:240, t);
+      o.frequency.exponentialRampToValueAtTime(70, t+0.06);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.7:0.5);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 28. Sine ping
+    function sinePing(t, dn, ctx, out) {
+      const dur = 0.3;
+      const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=dn?523:784;
+      const env = adsr(ctx, out, t, 0.002, dur, dn?0.5:0.35);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 29. Synth stab
+    function stab(t, dn, ctx, out) {
+      const dur = 0.15;
+      const o1 = ctx.createOscillator(); o1.type='sawtooth'; o1.frequency.value=dn?220:330;
+      const o2 = ctx.createOscillator(); o2.type='square'; o2.frequency.value=dn?221:331;
+      const lp = ctx.createBiquadFilter(); lp.type='lowpass';
+      lp.frequency.setValueAtTime(2000, t);
+      lp.frequency.exponentialRampToValueAtTime(300, t+0.12);
+      const env = adsr(ctx, out, t, 0.002, dur, dn?0.4:0.3);
+      o1.connect(lp); o2.connect(lp); lp.connect(env);
+      o1.start(t); o2.start(t); o1.stop(t+dur+.01); o2.stop(t+dur+.01);
+    },
+
+    // 30. Music box note — pure high sine with overtone
+    function musicBox(t, dn, ctx, out) {
+      const dur = 0.7;
+      const f = dn?1047:1319;
+      partial(ctx, out, t, f, dur, dn?0.32:0.24, 'sine');
+      partial(ctx, out, t, f*2, dur*0.6, (dn?0.32:0.24)*0.4, 'sine');
+      partial(ctx, out, t, f*3, dur*0.4, (dn?0.32:0.24)*0.15, 'sine');
+    },
+
+    // 31. Vibraphone — pure sine + slow vibrato
+    function vibraphone(t, dn, ctx, out) {
+      const dur = 0.9;
+      const f = dn?440:587;
+      partial(ctx, out, t, f, dur, dn?0.4:0.3, 'sine');
+      partial(ctx, out, t, f*4.1, dur*0.4, (dn?0.4:0.3)*0.2, 'sine');
+    },
+
+    // 32. Tubular bell — pure inharmonic
+    function tubularBell(t, dn, ctx, out) {
+      const dur = 1.2;
+      const f = dn?330:440;
+      const partials = [0.5, 1, 2.05, 3.07, 4.51];
+      const amps = [0.3, 1, 0.5, 0.35, 0.2];
+      for (let i = 0; i < partials.length; i++) {
+        partial(ctx, out, t, f*partials[i], dur*(1-i*0.1), (dn?0.28:0.2)*amps[i], 'sine');
+      }
+    },
+
+    // 33. Cathedral ping — pure sines, longer
+    function cathedral(t, dn, ctx, out) {
+      const dur = 1.5;
+      const f = dn?523:784;
+      partial(ctx, out, t, f, dur, dn?0.25:0.18, 'sine');
+      partial(ctx, out, t, f*1.5, dur*0.8, (dn?0.25:0.18)*0.5, 'sine');
+      partial(ctx, out, t, f*3, dur*0.4, (dn?0.25:0.18)*0.2, 'sine');
+    },
+
+    // 34. Tin can — high triangle
+    function tinCan(t, dn, ctx, out) {
+      const dur = 0.15;
+      const f = dn?2200:2800;
+      partial(ctx, out, t, f, dur, dn?0.3:0.22, 'triangle');
+      partial(ctx, out, t, f*1.7, dur*0.5, (dn?0.3:0.22)*0.4, 'triangle');
+    },
+
+    // 35. Glass tap — pure short sine
+    function glassTap(t, dn, ctx, out) {
+      const dur = 0.4;
+      const f = dn?1760:2349;
+      const o = ctx.createOscillator(); o.type='sine'; o.frequency.value=f;
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.35:0.25);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 36. Synth bass blip
+    function bassBlip(t, dn, ctx, out) {
+      const dur = 0.18;
+      const o = ctx.createOscillator(); o.type='square'; o.frequency.value=dn?110:165;
+      const lp = ctx.createBiquadFilter(); lp.type='lowpass';
+      lp.frequency.setValueAtTime(1200, t);
+      lp.frequency.exponentialRampToValueAtTime(200, t+0.15);
+      const env = adsr(ctx, out, t, 0.002, dur, dn?0.55:0.4);
+      o.connect(lp); lp.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 37. Chime — pleasant sine + 5th
+    function chime(t, dn, ctx, out) {
+      const dur = 0.8;
+      const f = dn?659:880;
+      partial(ctx, out, t, f, dur, dn?0.32:0.22, 'sine');
+      partial(ctx, out, t, f*1.5, dur*0.7, (dn?0.32:0.22)*0.5, 'sine');
+    },
+
+    // 38. Beep (retro game)
+    function beep(t, dn, ctx, out) {
+      const dur = 0.08;
+      const o = ctx.createOscillator(); o.type='square'; o.frequency.value=dn?880:660;
+      const env = adsr(ctx, out, t, 0.0005, dur, dn?0.4:0.28);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 39. Boop (low version)
+    function boop(t, dn, ctx, out) {
+      const dur = 0.1;
+      const o = ctx.createOscillator(); o.type='triangle'; o.frequency.value=dn?330:220;
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.5:0.35);
+      o.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+
+    // 40. Pluck (mid)
+    function pluckMid(t, dn, ctx, out) {
+      const dur = 0.35;
+      const f = dn?329:493;
+      const o = ctx.createOscillator(); o.type='triangle'; o.frequency.value=f;
+      const lp = ctx.createBiquadFilter(); lp.type='lowpass';
+      lp.frequency.setValueAtTime(2000, t);
+      lp.frequency.exponentialRampToValueAtTime(500, t+0.25);
+      const env = adsr(ctx, out, t, 0.001, dur, dn?0.4:0.3);
+      o.connect(lp); lp.connect(env);
+      o.start(t); o.stop(t+dur+.01);
+    },
+  ];
+
+  // Map preset names to SOUNDS array indexes
+  const PRESET_MAP = {
+    cowbell: 0,
+    kick: 1,
+    snare: 2,
+    hihat: 3,
+    woodblock: 4,
+    click: 5,
+  };
+
+  // Sound selection state
+  let currentSoundIdx = PRESET_MAP.cowbell;
+  let lastSoundIdx = -1;
+  let currentPreset = 'cowbell';
+  let randomizeSound = false;
+  let emphasizedBeats = new Set([0]); // beats to emphasize (0-indexed)
+
+  function pickNewSound() {
+    let next;
+    do {
+      next = Math.floor(Math.random() * SOUNDS.length);
+    } while (next === lastSoundIdx && SOUNDS.length > 1);
+    lastSoundIdx = next;
+    currentSoundIdx = next;
+  }
+
+  function selectPreset(name) {
+    if (!(name in PRESET_MAP)) return;
+    currentPreset = name;
+    currentSoundIdx = PRESET_MAP[name];
+    // Update UI
+    document.querySelectorAll('.preset-btn').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-preset') === name);
+    });
+  }
+
+  function playClick(time, beatIdx) {
+    if (!audioCtx) return;
+    const isEmphasized = emphasizedBeats.has(beatIdx);
+    const fn = SOUNDS[currentSoundIdx] || SOUNDS[0];
+    try {
+      fn(time, isEmphasized, audioCtx, masterGain);
+    } catch (e) {
+      SOUNDS[0](time, isEmphasized, audioCtx, masterGain);
+    }
+  }
+
+  // ─── Scheduler ───────────────────────────────────────────────────────────────
+  function scheduler() {
+    if (!audioCtx) return;
+    while (nextBeatTime < audioCtx.currentTime + LOOKAHEAD) {
+      playClick(nextBeatTime, beat);
+
+      const capturedBeat = beat;
+      const capturedBpm = currentBpm;
+      const delayMs = Math.max(0, (nextBeatTime - audioCtx.currentTime) * 1000);
+      setTimeout(() => updateVisuals(capturedBeat, capturedBpm), delayMs);
+
+      const secPerBeat = 60.0 / currentBpm;
+      nextBeatTime += secPerBeat;
+      beat = (beat + 1) % 4;
+
+      if (beat === 0) {
+        barCount++;
+        if (intervalUnit === 'bars') {
+          const iv = getIntervalVal();
+          if (barCount >= iv && currentBpm < getTargetBpm()) {
+            barCount = 0;
+            currentBpm = Math.min(currentBpm + getIncrementAmount(), getTargetBpm());
+            if (randomizeSound) pickNewSound();
+            updateProgressUI();
+          }
+        }
+      }
+    }
+  }
+
+  function startSecsMode() {
+    const iv = getIntervalVal();
+    secsModeTimer = setInterval(() => {
+      if (!isPlaying) return;
+      if (currentBpm < getTargetBpm()) {
+        currentBpm = Math.min(currentBpm + getIncrementAmount(), getTargetBpm());
+        if (randomizeSound) pickNewSound();
+        updateProgressUI();
+      } else {
+        clearInterval(secsModeTimer);
+        secsModeTimer = null;
+      }
+    }, iv * 1000);
+  }
+
+  function stopSecsMode() {
+    if (secsModeTimer) { clearInterval(secsModeTimer); secsModeTimer = null; }
+  }
+
+  // ─── Visuals ─────────────────────────────────────────────────────────────────
+  let flashTimeout = null;
+
+  function updateVisuals(b, bpm) {
+    const isEmphasized = emphasizedBeats.has(b);
+    const el = $('bpmDisplay');
+    el.textContent = bpm;
+    el.classList.remove('flash-beat', 'flash-downbeat');
+    void el.offsetWidth;
+    el.classList.add(isEmphasized ? 'flash-downbeat' : 'flash-beat');
+    clearTimeout(flashTimeout);
+    flashTimeout = setTimeout(() => {
+      el.classList.remove('flash-beat', 'flash-downbeat');
+    }, 80);
+
+    for (let i = 0; i < 4; i++) {
+      $('dot' + i).classList.remove('active-beat', 'active-downbeat');
+    }
+    $('dot' + b).classList.add(isEmphasized ? 'active-downbeat' : 'active-beat');
+
+    const iv = getIntervalVal();
+    const inc = getIncrementAmount();
+    const unit = intervalUnit === 'bars' ? (iv === 1 ? 'bar' : 'bars') : (iv === 1 ? 'sec' : 'secs');
+    $('status').innerHTML =
+      `Beat ${b + 1} of 4 &nbsp;·&nbsp; +<span>${inc}</span> BPM every <span>${iv} ${unit}</span>`;
+  }
+
+  function updateProgressUI() {
+    const start = getStartBpm();
+    const target = getTargetBpm();
+    const range = target - start;
+    const done = currentBpm - start;
+    const pct = range > 0 ? Math.min(100, (done / range) * 100) : 100;
+    $('progressFill').style.width = pct + '%';
+    $('progressLeft').textContent = `${currentBpm} BPM`;
+    $('progressRight').textContent = range > 0 ? `Target: ${target} BPM` : 'At target';
+    $('bpmDisplay').textContent = currentBpm;
+  }
+
+  // ─── Play / Stop / Reset ─────────────────────────────────────────────────────
+  async function startPlayback() {
+    try {
+      await initAudio();
+    } catch (e) {
+      $('status').textContent = 'Audio failed to start. Tap Start again.';
+      return;
+    }
+
+    if (audioCtx.state !== 'running') {
+      try { await audioCtx.resume(); } catch (e) {}
+    }
+
+    const start = getStartBpm();
+    const target = getTargetBpm();
+    if (start > target) {
+      alert('Starting BPM must be less than or equal to Target BPM.');
+      return;
+    }
+
+    currentBpm = start;
+    beat = 0;
+    barCount = 0;
+    isPlaying = true;
+    nextBeatTime = audioCtx.currentTime + 0.1;
+    if (randomizeSound) pickNewSound();
+    else currentSoundIdx = PRESET_MAP[currentPreset] || 0;
+
+    updateProgressUI();
+    $('mainBtn').textContent = 'Stop';
+    $('mainBtn').classList.add('running');
+
+    schedulerTimer = setInterval(scheduler, SCHED_MS);
+    if (intervalUnit === 'secs') startSecsMode();
+
+    // Run scheduler once immediately to schedule the first beat
+    scheduler();
+  }
+
+  function stopPlayback() {
+    isPlaying = false;
+    if (schedulerTimer) { clearInterval(schedulerTimer); schedulerTimer = null; }
+    stopSecsMode();
+    $('mainBtn').textContent = 'Start';
+    $('mainBtn').classList.remove('running');
+    $('status').textContent = 'Stopped.';
+  }
+
+  function resetAll() {
+    stopPlayback();
+    currentBpm = getStartBpm();
+    beat = 0;
+    barCount = 0;
+    $('bpmDisplay').textContent = currentBpm;
+    $('progressFill').style.width = '0%';
+    $('progressLeft').textContent = '—';
+    $('progressRight').textContent = '—';
+    $('status').textContent = 'Press Start to begin.';
+    for (let i = 0; i < 4; i++) {
+      $('dot' + i).classList.remove('active-beat', 'active-downbeat');
+    }
+  }
+
+  // ─── Event Listeners ─────────────────────────────────────────────────────────
+  $('mainBtn').addEventListener('click', () => {
+    if (isPlaying) stopPlayback(); else startPlayback();
+  });
+  $('resetBtn').addEventListener('click', resetAll);
+
+  // Preset buttons
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.getAttribute('data-preset');
+      selectPreset(name);
+      // Turning on a preset turns off randomize (they conflict)
+      if (randomizeSound) {
+        randomizeSound = false;
+        $('randomizeToggle').classList.remove('on');
+      }
+    });
+  });
+
+  // Randomize toggle
+  $('randomizeToggle').addEventListener('click', () => {
+    randomizeSound = !randomizeSound;
+    $('randomizeToggle').classList.toggle('on', randomizeSound);
+    if (randomizeSound) {
+      // Clear active preset since random is in charge now
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      pickNewSound();
+    } else {
+      // Restore current preset
+      selectPreset(currentPreset);
+    }
+  });
+
+  // Beat emphasis buttons
+  document.querySelectorAll('.beat-chk').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const beatIdx = parseInt(btn.getAttribute('data-beat'));
+      if (emphasizedBeats.has(beatIdx)) {
+        emphasizedBeats.delete(beatIdx);
+        btn.classList.remove('active');
+      } else {
+        emphasizedBeats.add(beatIdx);
+        btn.classList.add('active');
+      }
+    });
+  });
+
+  // Initialize display
+  $('bpmDisplay').textContent = getStartBpm();
+})();
+</script>
+</body>
+</html>
