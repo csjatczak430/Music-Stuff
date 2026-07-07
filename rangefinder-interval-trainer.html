@@ -510,8 +510,8 @@ const INTERVALS = [{
   name: 'Octave'
 }];
 const TIME_OPTIONS = [5, 10, 15, 20, 30];
-const FRET_COUNT = 12;
-const INLAY_FRETS = [3, 5, 7, 9];
+const FRET_COUNT = 15;
+const INLAY_FRETS = [3, 5, 7, 9, 15];
 
 // Default 6-string standard tuning, TAB order: string 1 (index 0) = top/highest on screen.
 const DEFAULT_TUNING = [{
@@ -545,7 +545,7 @@ const STRING_PAD = 14;
 /* ============================ helpers ============================ */
 
 function fretPercent(fret) {
-  return fret / FRET_COUNT * 100;
+  return (1 - Math.pow(2, -fret / 12)) / (1 - Math.pow(2, -FRET_COUNT / 12)) * 100;
 }
 // Where a note marker sits horizontally: in the fret space BEHIND the fret wire (real-guitar
 // finger position). Open-string notes (fret 0) sit behind the nut, on the headstock side.
@@ -667,6 +667,19 @@ function RangefinderApp() {
   });
   const [history, setHistory] = useState([]); // correct answers: { time, st, name }
   const [showSettings, setShowSettings] = useState(false);
+  const [showNumbers, setShowNumbers] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
+  const [shuffleLetters, setShuffleLetters] = useState(false);
+  const displayLetters = React.useMemo(() => {
+    if (!shuffleLetters) return LETTERS;
+    const a = LETTERS.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }, [question, shuffleLetters]);
+
   const [stringDefs, setStringDefs] = useState(DEFAULT_TUNING);
   const [intervalChoice, setIntervalChoice] = useState('random'); // 'random' | '1'..'12'
   const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
@@ -876,6 +889,17 @@ function RangefinderApp() {
         }
 
         /* settings */
+        .tgl { min-width:48px; padding:4px 12px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
+        .tgl.on { background:var(--rust); border-color:var(--rust); color:#1a1109; }
+        .string-label-col.collapsed { width:14px !important; }
+        .string-label-col.collapsed .string-label { display:none; }
+        .side-dot { position:absolute; width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #f2ead6, #b6a986 70%, #8c7f5e); box-shadow:inset 0 0 1px rgba(0,0,0,.4); transform:translate(-50%,-50%); pointer-events:none; }
+        .stepper { display:flex; align-items:center; gap:4px; }
+        .step-btn { width:26px; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; cursor:pointer; line-height:1; }
+        .step-btn:active { background:var(--rust-soft); }
+        .str-btn { min-width:44px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
+        .str-btn.on { background:var(--rust); border-color:var(--rust); color:#1a1109; }
+        .str-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
         .settings-panel {
           background:var(--panel-soft); border:1px solid var(--border); border-radius:14px;
           padding:14px 16px; margin-bottom:16px; font-size:13px;
@@ -917,9 +941,9 @@ function RangefinderApp() {
         .semitone-tag { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--muted); margin-left:2px; }
 
         /* fretboard */
-        .fretboard-wrap { margin:14px 0 10px; }
-        .fretboard-row { display:flex; align-items:flex-start; gap:16px; }
-        .string-label-col { position:relative; width:30px; height:${FRETBOARD_HEIGHT}px; flex-shrink:0; }
+        .fretboard-wrap { margin:14px -10px 10px; }
+        .fretboard-row { display:flex; align-items:flex-start; gap:8px; }
+        .string-label-col { position:relative; width:24px; height:${FRETBOARD_HEIGHT}px; flex-shrink:0; }
         .string-label { position:absolute; left:0; transform:translateY(-50%); white-space:nowrap; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--cream); }
         .fretboard { position:relative; flex:1; height:${FRETBOARD_HEIGHT}px; border:1px solid #2a1d12; border-radius:8px; background:linear-gradient(180deg,#3a2a1b 0%,#241910 55%,#1a1109 100%); box-shadow:inset 0 2px 8px rgba(0,0,0,.4); overflow:visible; }
         .string-line { position:absolute; left:3%; right:1%; border-radius:2px; background:linear-gradient(180deg,#fdfdfd 0%,#d2d2d2 40%,#9a9a9a 75%,#6f6f6f 100%); box-shadow:0 1px 2px rgba(0,0,0,.55); }
@@ -1016,7 +1040,17 @@ function RangefinderApp() {
     size: 18
   }))), started && !sessionEnded && showSettings && /*#__PURE__*/React.createElement("div", {
     className: "settings-panel"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Fret numbers"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (showNumbers ? ' on' : ''), onClick: () => setShowNumbers(v => !v) }, showNumbers ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Open-string labels"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (showLabels ? ' on' : ''), onClick: () => setShowLabels(v => !v) }, showLabels ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Shuffle letter buttons"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (shuffleLetters ? ' on' : ''), onClick: () => setShuffleLetters(v => !v) }, shuffleLetters ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Realism mode: turn numbers and labels off to drill the neck like a real guitar. Shuffle reorders the letter buttons every question so finger memory can't help you."),
+  /*#__PURE__*/React.createElement("div", { className: "settings-divider" }), /*#__PURE__*/React.createElement("div", {
     className: "settings-row",
     style: {
       marginBottom: 8
@@ -1155,7 +1189,7 @@ function RangefinderApp() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "fretboard-row"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "string-label-col"
+    className: "string-label-col" + (showLabels ? '' : ' collapsed')
   }, stringDefs.map((def, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "string-label",
@@ -1198,7 +1232,12 @@ function RangefinderApp() {
       left: fretPercent(11.5) + '%',
       top: FRETBOARD_HEIGHT / 2 + 20 + 'px'
     }
-  }), question.startPos && /*#__PURE__*/React.createElement("div", {
+  }), INLAY_FRETS.map(f => /*#__PURE__*/React.createElement("div", {
+    key: 'sd' + f,
+    className: "side-dot",
+    style: { left: fretPercent(f - 0.5) + '%', top: FRETBOARD_HEIGHT - 2 + 'px' }
+  })), /*#__PURE__*/React.createElement("div", { className: "side-dot", style: { left: 'calc(' + fretPercent(11.5) + '% - 5px)', top: FRETBOARD_HEIGHT - 2 + 'px' } }),
+  /*#__PURE__*/React.createElement("div", { className: "side-dot", style: { left: 'calc(' + fretPercent(11.5) + '% + 5px)', top: FRETBOARD_HEIGHT - 2 + 'px' } }), question.startPos && /*#__PURE__*/React.createElement("div", {
     className: 'marker start' + (activeTone === 0 ? ' active' : ''),
     style: {
       left: markerLeft(question.startPos.fret) + '%',
@@ -1211,13 +1250,13 @@ function RangefinderApp() {
       left: markerLeft(p.fret) + '%',
       top: stringY(p.str, n) + 'px'
     }
-  })))), /*#__PURE__*/React.createElement("div", {
+  })))), showNumbers && /*#__PURE__*/React.createElement("div", {
     className: "fretboard-row",
     style: {
       marginTop: 7
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "string-label-col",
+    className: "string-label-col" + (showLabels ? '' : ' collapsed'),
     style: {
       height: 14
     }
@@ -1282,7 +1321,7 @@ function RangefinderApp() {
     className: "answer-label"
   }, "Letter"), /*#__PURE__*/React.createElement("div", {
     className: "letters-grid"
-  }, LETTERS.map(l => /*#__PURE__*/React.createElement("button", {
+  }, displayLetters.map(l => /*#__PURE__*/React.createElement("button", {
     key: l,
     className: 'key-btn' + (selectedLetter === l ? ' selected' : ''),
     onClick: () => setSelectedLetter(cur => cur === l ? null : l)

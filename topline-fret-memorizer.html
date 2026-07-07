@@ -447,9 +447,9 @@ const ACCIDENTALS = [{
   offset: 1
 }];
 const NOTE_SPELLINGS = [['C'], ['C♯', 'D♭'], ['D'], ['D♯', 'E♭'], ['E'], ['F'], ['F♯', 'G♭'], ['G'], ['G♯', 'A♭'], ['A'], ['A♯', 'B♭'], ['B']];
-const FRET_COUNT_MAX = 12;
-const INLAY_FRETS = [3, 5, 7, 9];
-const FRET_RANGE_MAX = 12;
+const FRET_COUNT_MAX = 15;
+const INLAY_FRETS = [3, 5, 7, 9, 15];
+const FRET_RANGE_MAX = 15;
 
 // Full 6-string board for realistic context, TAB order (index 0 = top/highest string).
 // Only the BOTTOM two strings (indices 4 and 5) are highlighted, editable, and quizzed.
@@ -486,7 +486,7 @@ const STRING_PAD = 14;
 
 /* ============================ helpers ============================ */
 
-const fretPercent = fret => fret / FRET_COUNT_MAX * 100;
+const fretPercent = fret => (1 - Math.pow(2, -fret / 12)) / (1 - Math.pow(2, -FRET_COUNT_MAX / 12)) * 100;
 const markerLeft = fret => fret === 0 ? -3.2 : fretPercent(fret - 0.5);
 const stringY = (i, count) => STRING_PAD + i * (FRETBOARD_HEIGHT - STRING_PAD * 2) / (count - 1);
 const midiToFreq = m => 440 * Math.pow(2, (m - 69) / 12);
@@ -533,16 +533,31 @@ function ToplineApp() {
   });
   const [history, setHistory] = useState([]); // { str, fret, midi, correct, time }
   const [showSettings, setShowSettings] = useState(false);
+  const [showNumbers, setShowNumbers] = useState(true);
+  const [showLabels, setShowLabels] = useState(true);
+  const [shuffleLetters, setShuffleLetters] = useState(false);
+  const displayLetters = React.useMemo(() => {
+    if (!shuffleLetters) return LETTERS;
+    const a = LETTERS.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }, [question, shuffleLetters]);
+
   const [stringDefs, setStringDefs] = useState(FULL_DEFAULT);
+  const [enabledStrings, setEnabledStrings] = useState([4, 5]);
+  const toggleString = i => setEnabledStrings(prev => prev.includes(i) ? (prev.length > 1 ? prev.filter(x => x !== i) : prev) : [...prev, i].sort((a, b) => a - b));
   const [minFret, setMinFret] = useState(0);
-  const [maxFret, setMaxFret] = useState(12);
+  const [maxFret, setMaxFret] = useState(15);
   const audioCtxRef = useRef(null);
   const answeredRef = useRef(false);
   const startTimeRef = useRef(0);
   const deckRef = useRef([]);
   const deckKeyRef = useRef(null);
   const n = stringDefs.length;
-  const openQuiz = QUIZ_INDICES.map(i => stringMidi(stringDefs[i]));
+  const openQuiz = enabledStrings.map(i => stringMidi(stringDefs[i]));
   const minOct = octaveOf(Math.min(...openQuiz) + minFret);
   const maxOct = octaveOf(Math.max(...openQuiz) + maxFret);
   const octaveOptions = [];
@@ -574,10 +589,10 @@ function ToplineApp() {
 
   /* ---------- deck: cover every fret in range once, then reshuffle ---------- */
   const drawNext = useCallback(prev => {
-    const key = minFret + '-' + maxFret + '|' + openQuiz.join(',');
+    const key = minFret + '-' + maxFret + '|' + enabledStrings.join(':') + '|' + openQuiz.join(',');
     if (deckKeyRef.current !== key || deckRef.current.length === 0) {
       const positions = [];
-      QUIZ_INDICES.forEach(str => {
+      enabledStrings.forEach(str => {
         for (let f = minFret; f <= maxFret; f++) positions.push({
           str,
           fret: f
@@ -610,7 +625,7 @@ function ToplineApp() {
     startTimeRef.current = Date.now();
   },
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  [minFret, maxFret, stringDefs]);
+  [minFret, maxFret, stringDefs, enabledStrings]);
   const handleBegin = () => {
     deckKeyRef.current = null;
     setStats({
@@ -733,6 +748,17 @@ function ToplineApp() {
         .icon-btn:hover { color:var(--cream); border-color:var(--rust-soft); }
         .card { background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:18px 18px; box-shadow:0 20px 50px -25px rgba(0,0,0,.7); }
 
+        .tgl { min-width:48px; padding:4px 12px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
+        .tgl.on { background:var(--rust); border-color:var(--rust); color:#1a1109; }
+        .string-label-col.collapsed { width:14px !important; }
+        .string-label-col.collapsed .string-label { display:none; }
+        .side-dot { position:absolute; width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #f2ead6, #b6a986 70%, #8c7f5e); box-shadow:inset 0 0 1px rgba(0,0,0,.4); transform:translate(-50%,-50%); pointer-events:none; }
+        .stepper { display:flex; align-items:center; gap:4px; }
+        .step-btn { width:26px; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; cursor:pointer; line-height:1; }
+        .step-btn:active { background:var(--rust-soft); }
+        .str-btn { min-width:44px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
+        .str-btn.on { background:var(--rust); border-color:var(--rust); color:#1a1109; }
+        .str-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
         .settings-panel { background:var(--panel-soft); border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:14px; font-size:13px; }
         .settings-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
         .settings-label { font-size:13px; color:var(--cream); }
@@ -762,9 +788,9 @@ function ToplineApp() {
         .prompt-title { font-family:'Fraunces',serif; font-weight:600; font-size:22px; color:var(--cream); }
         .prompt-sub { font-size:12px; color:var(--muted); margin-top:1px; }
 
-        .fretboard-wrap { margin:14px 0 10px; }
-        .fretboard-row { display:flex; align-items:flex-start; gap:16px; }
-        .string-label-col { position:relative; width:28px; height:${FRETBOARD_HEIGHT}px; flex-shrink:0; }
+        .fretboard-wrap { margin:14px -10px 10px; }
+        .fretboard-row { display:flex; align-items:flex-start; gap:8px; }
+        .string-label-col { position:relative; width:24px; height:${FRETBOARD_HEIGHT}px; flex-shrink:0; }
         .string-label { position:absolute; left:0; transform:translateY(-50%); white-space:nowrap; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--muted); transition:color .15s; }
         .string-label.hot { color:var(--cream); }
         .fretboard { position:relative; flex:1; height:${FRETBOARD_HEIGHT}px; border:1px solid #2a1d12; border-radius:8px; background:linear-gradient(180deg,#3a2a1b 0%,#241910 55%,#1a1109 100%); box-shadow:inset 0 2px 8px rgba(0,0,0,.4); overflow:visible; }
@@ -842,7 +868,7 @@ function ToplineApp() {
     className: "header-row"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "eyebrow"
-  }, "Bottom-string fret memorizer"), /*#__PURE__*/React.createElement("div", {
+  }, "Fretboard memorizer"), /*#__PURE__*/React.createElement("div", {
     className: "wordmark"
   }, "Topline")), started && !sessionEnded && /*#__PURE__*/React.createElement("button", {
     className: "icon-btn",
@@ -852,14 +878,28 @@ function ToplineApp() {
     size: 18
   }))), started && !sessionEnded && showSettings && /*#__PURE__*/React.createElement("div", {
     className: "settings-panel"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Fret numbers"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (showNumbers ? ' on' : ''), onClick: () => setShowNumbers(v => !v) }, showNumbers ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Open-string labels"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (showLabels ? ' on' : ''), onClick: () => setShowLabels(v => !v) }, showLabels ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Shuffle letter buttons"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (shuffleLetters ? ' on' : ''), onClick: () => setShuffleLetters(v => !v) }, shuffleLetters ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Realism mode: turn numbers and labels off to drill the neck like a real guitar. Shuffle reorders the letter buttons every question so finger memory can't help you."),
+  /*#__PURE__*/React.createElement("div", { className: "settings-divider" }), /*#__PURE__*/React.createElement("div", {
     className: "settings-row",
     style: {
       marginBottom: 8
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "settings-label"
-  }, "Bottom two strings")), QUIZ_INDICES.map(i => {
+  }, "Strings in play")), /*#__PURE__*/React.createElement("div", { className: "str-row" }, stringDefs.map((sdef, si) => /*#__PURE__*/React.createElement("button", {
+    key: si,
+    className: 'str-btn' + (enabledStrings.includes(si) ? ' on' : ''),
+    onClick: () => toggleString(si)
+  }, (si + 1) + ' \u00b7 ' + stringLabel(sdef)))), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Questions come only from the highlighted strings. At least one always stays on."), /*#__PURE__*/React.createElement("div", { className: "settings-row", style: { marginBottom: 8 } }, /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Tuning")), stringDefs.map((_ignored, i) => {
     const def = stringDefs[i];
     const valid = /^[A-G]$/i.test((def.letter || '').trim());
     return /*#__PURE__*/React.createElement("div", {
@@ -922,7 +962,7 @@ function ToplineApp() {
     className: "range-field"
   }, /*#__PURE__*/React.createElement("span", {
     className: "range-field-label"
-  }, "From"), /*#__PURE__*/React.createElement("input", {
+  }, "From"), /*#__PURE__*/React.createElement("div", { className: "stepper" }, /*#__PURE__*/React.createElement("button", { className: "step-btn", "aria-label": "Lower start fret", onClick: () => setMinFret(v => Math.max(0, v - 1)) }, "\u2212"), /*#__PURE__*/React.createElement("input", {
     type: "number",
     className: "octave-input",
     min: 0,
@@ -936,13 +976,13 @@ function ToplineApp() {
       if (v > maxFret) setMaxFret(v);
     },
     "aria-label": "Fret range start"
-  })), /*#__PURE__*/React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("button", { className: "step-btn", "aria-label": "Raise start fret", onClick: () => { const v = Math.min(FRET_RANGE_MAX, minFret + 1); setMinFret(v); if (v > maxFret) setMaxFret(v); } }, "+"))), /*#__PURE__*/React.createElement("span", {
     className: "range-dash"
   }, "–"), /*#__PURE__*/React.createElement("div", {
     className: "range-field"
   }, /*#__PURE__*/React.createElement("span", {
     className: "range-field-label"
-  }, "To"), /*#__PURE__*/React.createElement("input", {
+  }, "To"), /*#__PURE__*/React.createElement("div", { className: "stepper" }, /*#__PURE__*/React.createElement("button", { className: "step-btn", "aria-label": "Lower end fret", onClick: () => { const v = Math.max(0, maxFret - 1); setMaxFret(v); if (v < minFret) setMinFret(v); } }, "\u2212"), /*#__PURE__*/React.createElement("input", {
     type: "number",
     className: "octave-input",
     min: 0,
@@ -956,7 +996,7 @@ function ToplineApp() {
       if (v < minFret) setMinFret(v);
     },
     "aria-label": "Fret range end"
-  })), /*#__PURE__*/React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", { className: "step-btn", "aria-label": "Raise end fret", onClick: () => setMaxFret(v => Math.min(FRET_RANGE_MAX, v + 1)) }, "+"))), /*#__PURE__*/React.createElement("button", {
     className: "reset-link",
     style: {
       marginLeft: 'auto'
@@ -981,7 +1021,7 @@ function ToplineApp() {
       fontSize: 22,
       marginBottom: 4
     }
-  }, "Learn the bottom two strings"), /*#__PURE__*/React.createElement("p", null, "A single dot lights up on the low E or A string. Name it — letter, flat/natural/sharp, and octave. Every fret is covered once before the order reshuffles, so nothing gets skipped."), /*#__PURE__*/React.createElement("button", {
+  }, "Learn the fretboard"), /*#__PURE__*/React.createElement("p", null, "A single dot lights up on one of your chosen strings. Name it — letter, flat/natural/sharp, and octave. Every fret is covered once before the order reshuffles, so nothing gets skipped."), /*#__PURE__*/React.createElement("button", {
     className: "primary-btn",
     onClick: handleBegin
   }, "Begin")), started && !sessionEnded && question && /*#__PURE__*/React.createElement("div", {
@@ -999,24 +1039,25 @@ function ToplineApp() {
   }, /*#__PURE__*/React.createElement("div", {
     className: "fretboard-row"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "string-label-col"
+    className: "string-label-col" + (showLabels ? '' : ' collapsed')
   }, stringDefs.map((def, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
-    className: 'string-label' + (QUIZ_INDICES.includes(i) ? ' hot' : ''),
+    className: 'string-label' + (enabledStrings.includes(i) ? ' hot' : ''),
     style: {
       top: stringY(i, n) + 'px'
     }
   }, stringLabel(def)))), /*#__PURE__*/React.createElement("div", {
     className: "fretboard"
-  }, /*#__PURE__*/React.createElement("div", {
+  }, enabledStrings.map(si => /*#__PURE__*/React.createElement("div", {
+    key: 'hb' + si,
     className: "hot-band",
     style: {
-      top: stringY(QUIZ_INDICES[0], n) - 12 + 'px',
-      height: stringY(QUIZ_INDICES[QUIZ_COUNT - 1], n) - stringY(QUIZ_INDICES[0], n) + 24 + 'px'
+      top: stringY(si, n) - 10 + 'px',
+      height: '20px'
     }
-  }), stringDefs.map((_, i) => /*#__PURE__*/React.createElement("div", {
+  })), stringDefs.map((_, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
-    className: 'string-line' + (QUIZ_INDICES.includes(i) ? '' : ' dim'),
+    className: 'string-line' + (enabledStrings.includes(i) ? '' : ' dim'),
     style: {
       top: stringY(i, n) + 'px',
       height: (n > 1 ? 1 + i / (n - 1) * 2.2 : 2).toFixed(2) + 'px'
@@ -1048,19 +1089,24 @@ function ToplineApp() {
       left: fretPercent(11.5) + '%',
       top: FRETBOARD_HEIGHT / 2 + 16 + 'px'
     }
-  }), /*#__PURE__*/React.createElement("div", {
+  }), INLAY_FRETS.map(f => /*#__PURE__*/React.createElement("div", {
+    key: 'sd' + f,
+    className: "side-dot",
+    style: { left: fretPercent(f - 0.5) + '%', top: FRETBOARD_HEIGHT - 2 + 'px' }
+  })), /*#__PURE__*/React.createElement("div", { className: "side-dot", style: { left: 'calc(' + fretPercent(11.5) + '% - 5px)', top: FRETBOARD_HEIGHT - 2 + 'px' } }),
+  /*#__PURE__*/React.createElement("div", { className: "side-dot", style: { left: 'calc(' + fretPercent(11.5) + '% + 5px)', top: FRETBOARD_HEIGHT - 2 + 'px' } }), /*#__PURE__*/React.createElement("div", {
     className: 'marker given' + (feedback ? feedback.correct ? ' correct' : ' wrong' : ''),
     style: {
       left: markerLeft(question.fret) + '%',
       top: stringY(question.str, n) + 'px'
     }
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))), showNumbers && /*#__PURE__*/React.createElement("div", {
     className: "fretboard-row",
     style: {
       marginTop: 6
     }
   }, /*#__PURE__*/React.createElement("div", {
-    className: "string-label-col",
+    className: "string-label-col" + (showLabels ? '' : ' collapsed'),
     style: {
       height: 13
     }
@@ -1103,7 +1149,7 @@ function ToplineApp() {
     className: "answer-label"
   }, "Letter"), /*#__PURE__*/React.createElement("div", {
     className: "letters-grid"
-  }, LETTERS.map(l => /*#__PURE__*/React.createElement("button", {
+  }, displayLetters.map(l => /*#__PURE__*/React.createElement("button", {
     key: l,
     className: 'key-btn' + (selectedLetter === l ? ' selected' : ''),
     onClick: () => setSelectedLetter(cur => cur === l ? null : l)
