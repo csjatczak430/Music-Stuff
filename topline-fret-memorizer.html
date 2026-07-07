@@ -1204,5 +1204,13 @@ function ToplineApp() {
 }
 ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(ToplineApp, null));
 </script>
+<script>
+// Register offline service worker (only works when served over https, e.g. GitHub Pages)
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
 </body>
 </html>
