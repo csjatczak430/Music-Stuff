@@ -5,25 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Tempo Shift</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --gold: #ffc840;
-    --orange: #ff6b35;
-    --red: #ff4444;
-    --bg: #0a0a0a;
-    --surface: #111;
-    --border: #1e1e1e;
-    --border-mid: #2a2a2a;
-    --text: #e8e0d0;
-    --muted: #555;
-    --dim: #333;
+    --gold: #cbaa7d;
+    --orange: #9a7d55;
+    --red: #a85340;
+    --bg: #150d09;
+    --surface: #1b120d;
+    --border: #2b1c12;
+    --border-mid: #342215;
+    --text: #f2ead6;
+    --muted: #97815f;
+    --dim: #46301d;
   }
 
   body {
-    background: var(--bg);
+    background: radial-gradient(ellipse at 50% -10%, #2e1d14 0%, #1b120d 55%, #150d09 100%);
     font-family: 'IBM Plex Mono', monospace;
     color: var(--text);
     min-height: 100vh;
@@ -42,8 +42,8 @@
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255,200,80,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,200,80,0.04) 1px, transparent 1px);
+      linear-gradient(rgba(203,170,125,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(203,170,125,0.06) 1px, transparent 1px);
     background-size: 40px 40px;
     pointer-events: none;
     z-index: 0;
@@ -57,7 +57,7 @@
   }
 
   h1 {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Fraunces', sans-serif;
     font-size: clamp(52px, 12vw, 84px);
     letter-spacing: 0.08em;
     color: var(--gold);
@@ -76,7 +76,7 @@
   /* ── TEMPO DISPLAY ── */
   .tempo-display {
     background: var(--surface);
-    border: 1px solid #222;
+    border: 1px solid #261811;
     border-top: 3px solid var(--gold);
     padding: 28px 32px 24px;
     margin-bottom: 6px;
@@ -89,7 +89,7 @@
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(ellipse at 50% 0%, rgba(255,200,64,0.05) 0%, transparent 70%);
+    background: radial-gradient(ellipse at 50% 0%, rgba(203,170,125,0.07) 0%, transparent 70%);
     pointer-events: none;
   }
 
@@ -102,10 +102,10 @@
   }
 
   .tempo-number {
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Fraunces', sans-serif;
     font-size: clamp(96px, 22vw, 156px);
     line-height: 1;
-    color: #fff;
+    color: #f2ead6;
     letter-spacing: -0.02em;
     transition: color 0.08s;
     position: relative;
@@ -116,7 +116,7 @@
   .tempo-unit {
     font-size: 10px;
     letter-spacing: 0.3em;
-    color: #3a3a3a;
+    color: #46301d;
     text-transform: uppercase;
     margin-top: 2px;
     position: relative;
@@ -136,11 +136,11 @@
     width: 9px;
     height: 9px;
     border-radius: 50%;
-    background: #1e1e1e;
+    background: #2b1c12;
     transition: background 0.04s, box-shadow 0.04s;
     flex-shrink: 0;
   }
-  .beat-dot.beat-accent { background: #1e1e1e; }
+  .beat-dot.beat-accent { background: #2b1c12; }
   .beat-dot.on {
     background: var(--orange);
     box-shadow: 0 0 8px var(--orange);
@@ -153,7 +153,7 @@
   /* ── COUNTDOWN BAR ── */
   .countdown-bar {
     height: 3px;
-    background: #141414;
+    background: #1e130c;
     margin-bottom: 26px;
     overflow: hidden;
   }
@@ -168,7 +168,7 @@
   .section-label {
     font-size: 10px;
     letter-spacing: 0.3em;
-    color: #3a3a3a;
+    color: #46301d;
     text-transform: uppercase;
     margin-bottom: 10px;
     margin-top: 22px;
@@ -193,7 +193,7 @@
   }
   .range-row.active-range {
     border-color: var(--gold);
-    background: rgba(255,200,64,0.04);
+    background: rgba(203,170,125,0.06);
   }
 
   .range-letter {
@@ -211,11 +211,11 @@
     flex: 1;
   }
 
-  .range-sep { color: #3a3a3a; font-size: 13px; }
+  .range-sep { color: #46301d; font-size: 13px; }
 
   input[type="number"] {
     width: 62px;
-    background: #0d0d0d;
+    background: #170f0b;
     border: 1px solid var(--border-mid);
     color: var(--text);
     font-family: 'IBM Plex Mono', monospace;
@@ -231,12 +231,12 @@
   input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
   input[type="number"]:focus { border-color: var(--gold); }
 
-  .bpm-tag { font-size: 10px; color: #2e2e2e; letter-spacing: 0.1em; }
+  .bpm-tag { font-size: 10px; color: #392617; letter-spacing: 0.1em; }
 
   .btn-remove {
     background: none;
-    border: 1px solid #222;
-    color: #444;
+    border: 1px solid #261811;
+    color: #533b24;
     width: 26px;
     height: 26px;
     cursor: pointer;
@@ -253,8 +253,8 @@
 
   .btn-add {
     background: none;
-    border: 1px dashed #222;
-    color: #3a3a3a;
+    border: 1px dashed #261811;
+    color: #46301d;
     width: 100%;
     padding: 10px;
     cursor: pointer;
@@ -292,7 +292,7 @@
   }
   .interval-unit {
     font-size: 10px;
-    color: #3a3a3a;
+    color: #46301d;
     letter-spacing: 0.1em;
   }
   #intervalInput { width: 60px; }
@@ -310,7 +310,7 @@
     flex-shrink: 0;
     transition: border-color 0.15s;
   }
-  .sound-box:hover { border-color: #333; }
+  .sound-box:hover { border-color: #46301d; }
   .sound-label {
     font-size: 10px;
     letter-spacing: 0.2em;
@@ -321,8 +321,8 @@
     width: 30px;
     height: 17px;
     border-radius: 9px;
-    background: #1a1a1a;
-    border: 1px solid #2e2e2e;
+    background: #241811;
+    border: 1px solid #392617;
     position: relative;
     transition: background 0.2s, border-color 0.2s;
     flex-shrink: 0;
@@ -334,10 +334,10 @@
     top: 2px; left: 2px;
     width: 11px; height: 11px;
     border-radius: 50%;
-    background: #444;
+    background: #533b24;
     transition: transform 0.2s, background 0.2s;
   }
-  .toggle.on::after { transform: translateX(13px); background: #0a0a0a; }
+  .toggle.on::after { transform: translateX(13px); background: #150d09; }
 
   /* ── CONTROLS ── */
   .controls {
@@ -350,8 +350,8 @@
     flex: 1;
     background: var(--gold);
     border: none;
-    color: #0a0a0a;
-    font-family: 'Bebas Neue', sans-serif;
+    color: #150d09;
+    font-family: 'Fraunces', sans-serif;
     font-size: 24px;
     letter-spacing: 0.1em;
     padding: 15px;
@@ -362,23 +362,23 @@
 
   .btn-stop {
     flex: 1;
-    background: #141414;
+    background: #1e130c;
     border: 1px solid var(--red);
     color: var(--red);
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Fraunces', sans-serif;
     font-size: 24px;
     letter-spacing: 0.1em;
     padding: 15px;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
   }
-  .btn-stop:hover { background: var(--red); color: #fff; }
+  .btn-stop:hover { background: var(--red); color: #f2ead6; }
 
   .btn-next {
-    background: #141414;
-    border: 1px solid #2a2a2a;
+    background: #1e130c;
+    border: 1px solid #342215;
     color: #666;
-    font-family: 'Bebas Neue', sans-serif;
+    font-family: 'Fraunces', sans-serif;
     font-size: 24px;
     letter-spacing: 0.1em;
     padding: 15px 20px;
@@ -398,7 +398,7 @@
   .status-dot {
     width: 6px; height: 6px;
     border-radius: 50%;
-    background: #2a2a2a;
+    background: #342215;
     transition: background 0.3s;
   }
   .status-dot.active {
@@ -410,13 +410,13 @@
   .status-text {
     font-size: 10px;
     letter-spacing: 0.25em;
-    color: #3a3a3a;
+    color: #46301d;
     text-transform: uppercase;
   }
   .change-count {
     font-size: 10px;
     letter-spacing: 0.2em;
-    color: #2e2e2e;
+    color: #392617;
     text-transform: uppercase;
   }
 

@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Rangefinder — Interval Trainer</title>
+<title>Interval</title>
+<meta name="apple-mobile-web-app-title" content="Interval">
 <style>
-  html, body { margin: 0; padding: 0; min-height: 100%; background: #181210; }
-  #fallback { color: #efe6d5; font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; line-height: 1.6; }
+  html, body { margin: 0; padding: 0; min-height: 100%; background: #1b120d; }
+  #fallback { color: #f2ead6; font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -660,6 +661,11 @@ function RangefinderApp() {
   const [selectedAccidental, setSelectedAccidental] = useState('natural');
   const [selectedOctave, setSelectedOctave] = useState(null);
   const [feedback, setFeedback] = useState(null);
+  const [guessBoth, setGuessBoth] = useState(false);
+  const guessBothRef = useRef(false);
+  useEffect(() => { guessBothRef.current = guessBoth; }, [guessBoth]);
+  const [stage, setStage] = useState(1); // 0 = name the given note (hard mode), 1 = name the target
+  const [firstDone, setFirstDone] = useState(false);
   const [activeTone, setActiveTone] = useState(null);
   const [stats, setStats] = useState({
     correct: 0,
@@ -749,6 +755,8 @@ function RangefinderApp() {
     setSelectedOctave(null);
     setFeedback(null);
     answeredRef.current = false;
+    setStage(guessBothRef.current ? 0 : 1);
+    setFirstDone(false);
     startTimeRef.current = Date.now();
     setLiveElapsed(0);
     setCountdownDisplay(timeLimitEnabled ? timeLimitSeconds : null);
@@ -769,6 +777,20 @@ function RangefinderApp() {
     if (!isTimeout) {
       const off = ACCIDENTALS.find(a => a.id === selectedAccidental).offset;
       const answerMidi = (selectedOctave + 1) * 12 + LETTER_BASE[selectedLetter] + off;
+      if (guessBoth && stage === 0) {
+        if (answerMidi === question.startMidi) {
+          answeredRef.current = false;
+          setStage(1);
+          setFirstDone(true);
+          setSelectedLetter(null);
+          setSelectedAccidental('natural');
+          setSelectedOctave(null);
+          return;
+        }
+        setFeedback({ correct: false, isTimeout: false, time: elapsed, failedStage: 0 });
+        setStats(s => ({ correct: s.correct, total: s.total + 1 }));
+        return;
+      }
       correct = answerMidi === question.targetMidi;
     }
     setFeedback({
@@ -787,7 +809,7 @@ function RangefinderApp() {
         name: question.interval.name
       }]);
     }
-  }, [question, selectedLetter, selectedAccidental, selectedOctave]);
+  }, [question, selectedLetter, selectedAccidental, selectedOctave, guessBoth, stage]);
 
   // Single timer drives both the live stopwatch and (optionally) the countdown.
   useEffect(() => {
@@ -863,13 +885,13 @@ function RangefinderApp() {
   }, /*#__PURE__*/React.createElement("style", null, `
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
         :root {
-          --bg:#181210; --bg-2:#120d0b; --panel:#221b15; --panel-soft:#2a2119; --border:#3c2e22;
-          --rust:#c2693f; --rust-soft:#8f4a2c; --sage:#8fa06b; --clay:#a8483a; --cream:#efe6d5; --muted:#9c8b76;
+          --bg:#1b120d; --bg-2:#150d09; --panel:#261811; --panel-soft:#2e2014; --border:#46301d;
+          --rust:#cbaa7d; --rust-soft:#9a7d55; --sage:#8fa06b; --clay:#a85340; --cream:#f2ead6; --muted:#a89173;
         }
         * { box-sizing:border-box; }
         .shell {
           min-height:100vh; width:100%; color:var(--cream); font-family:'Inter',sans-serif;
-          background:radial-gradient(ellipse at 50% -10%, #2a2018 0%, var(--bg) 55%, var(--bg-2) 100%);
+          background:radial-gradient(ellipse at 50% -10%, #2e1d14 0%, var(--bg) 55%, var(--bg-2) 100%);
           display:flex; justify-content:center; padding:28px 16px 40px;
         }
         .panel { width:100%; max-width:420px; animation:rise .5s ease both; }
@@ -890,7 +912,7 @@ function RangefinderApp() {
 
         /* settings */
         .tgl { min-width:48px; padding:4px 12px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
-        .tgl.on { background:var(--rust); border-color:var(--rust); color:#1a1109; }
+        .tgl.on { background:var(--rust); border-color:var(--rust); color:#20110a; }
         .string-label-col.collapsed { width:14px !important; }
         .string-label-col.collapsed .string-label { display:none; }
         .side-dot { position:absolute; width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #f2ead6, #b6a986 70%, #8c7f5e); box-shadow:inset 0 0 1px rgba(0,0,0,.4); transform:translate(-50%,-50%); pointer-events:none; }
@@ -898,7 +920,7 @@ function RangefinderApp() {
         .step-btn { width:26px; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; cursor:pointer; line-height:1; }
         .step-btn:active { background:var(--rust-soft); }
         .str-btn { min-width:44px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
-        .str-btn.on { background:var(--rust); border-color:var(--rust); color:#1a1109; }
+        .str-btn.on { background:var(--rust); border-color:var(--rust); color:#20110a; }
         .str-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
         .settings-panel {
           background:var(--panel-soft); border:1px solid var(--border); border-radius:14px;
@@ -934,7 +956,7 @@ function RangefinderApp() {
 
         /* question */
         .mode-banner-wrap { display:flex; justify-content:center; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-        .mode-banner { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--rust); background:rgba(194,105,63,.08); border:1px solid var(--rust-soft); border-radius:999px; padding:5px 12px; }
+        .mode-banner { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--rust); background:rgba(203,170,125,.08); border:1px solid var(--rust-soft); border-radius:999px; padding:5px 12px; }
         .start-note-block { text-align:center; margin-bottom:4px; }
         .note-display { font-family:'Fraunces',serif; font-weight:600; font-size:52px; line-height:1; color:var(--cream); }
         .interval-row { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:6px; color:var(--rust); font-weight:600; font-size:15px; }
@@ -945,7 +967,7 @@ function RangefinderApp() {
         .fretboard-row { display:flex; align-items:flex-start; gap:8px; }
         .string-label-col { position:relative; width:24px; height:${FRETBOARD_HEIGHT}px; flex-shrink:0; }
         .string-label { position:absolute; left:0; transform:translateY(-50%); white-space:nowrap; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--cream); }
-        .fretboard { position:relative; flex:1; height:${FRETBOARD_HEIGHT}px; border:1px solid #2a1d12; border-radius:8px; background:linear-gradient(180deg,#3a2a1b 0%,#241910 55%,#1a1109 100%); box-shadow:inset 0 2px 8px rgba(0,0,0,.4); overflow:visible; }
+        .fretboard { position:relative; flex:1; height:${FRETBOARD_HEIGHT}px; border:1px solid #3a2114; border-radius:8px; background:linear-gradient(180deg,#4a2c1d 0%,#301a10 55%,#20110a 100%); box-shadow:inset 0 2px 8px rgba(0,0,0,.4); overflow:visible; }
         .string-line { position:absolute; left:3%; right:1%; border-radius:2px; background:linear-gradient(180deg,#fdfdfd 0%,#d2d2d2 40%,#9a9a9a 75%,#6f6f6f 100%); box-shadow:0 1px 2px rgba(0,0,0,.55); }
         .fret-wire { position:absolute; top:7px; bottom:7px; width:3px; border-radius:1px; transform:translateX(-50%); background:linear-gradient(90deg,#6b4f24 0%,#d8b46a 45%,#f1d79b 50%,#d8b46a 55%,#6b4f24 100%); box-shadow:0 0 2px rgba(0,0,0,.5); }
         .fret-wire.nut { width:6px; border-radius:2px; background:linear-gradient(90deg,#bcae8d,#f4ecd6 50%,#c7bb9c); box-shadow:0 0 3px rgba(0,0,0,.45); }
@@ -955,7 +977,7 @@ function RangefinderApp() {
         .marker.target { background:transparent; border:2px solid var(--rust); }
         .marker.target.correct { background:var(--sage); border-color:#1c140e; }
         .marker.target.wrong { background:transparent; border-color:var(--clay); border-style:dashed; }
-        .marker.active { box-shadow:0 0 0 6px rgba(194,105,63,.35); transform:translate(-50%,-50%) scale(1.18); }
+        .marker.active { box-shadow:0 0 0 6px rgba(203,170,125,.35); transform:translate(-50%,-50%) scale(1.18); }
         .fret-number-row { position:relative; flex:1; height:14px; }
         .fret-number { position:absolute; transform:translateX(-50%); font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--muted); }
         .legend { display:flex; justify-content:center; gap:18px; margin-top:6px; }
@@ -1032,7 +1054,7 @@ function RangefinderApp() {
     className: "eyebrow"
   }, "Chromatic interval trainer"), /*#__PURE__*/React.createElement("div", {
     className: "wordmark"
-  }, "Rangefinder")), started && !sessionEnded && /*#__PURE__*/React.createElement("button", {
+  }, "Interval")), started && !sessionEnded && /*#__PURE__*/React.createElement("button", {
     className: "icon-btn",
     onClick: () => setShowSettings(v => !v),
     "aria-label": "Settings"
@@ -1046,6 +1068,9 @@ function RangefinderApp() {
   ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
     /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Open-string labels"),
     /*#__PURE__*/React.createElement("button", { className: 'tgl' + (showLabels ? ' on' : ''), onClick: () => setShowLabels(v => !v) }, showLabels ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Guess both notes"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (guessBoth ? ' on' : ''), onClick: () => setGuessBoth(v => !v) }, guessBoth ? 'On' : 'Off')
   ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
     /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Shuffle letter buttons"),
     /*#__PURE__*/React.createElement("button", { className: 'tgl' + (shuffleLetters ? ' on' : ''), onClick: () => setShuffleLetters(v => !v) }, shuffleLetters ? 'On' : 'Off')
@@ -1176,7 +1201,7 @@ function RangefinderApp() {
     className: "eyebrow"
   }, "Starting note"), /*#__PURE__*/React.createElement("div", {
     className: "note-display"
-  }, noteLabel(question.startMidi)), /*#__PURE__*/React.createElement("div", {
+  }, guessBoth && stage === 0 && !feedback ? '?' : noteLabel(question.startMidi)), /*#__PURE__*/React.createElement("div", {
     className: "interval-row"
   }, question.direction === 'above' ? /*#__PURE__*/React.createElement(ArrowUp, {
     size: 16
@@ -1309,13 +1334,13 @@ function RangefinderApp() {
     size: 15
   }), " Not quite ", /*#__PURE__*/React.createElement("span", {
     className: "muted"
-  }, "· it's ", noteLabelFull(question.targetMidi))) : /*#__PURE__*/React.createElement("span", {
+  }, "· ", feedback.failedStage === 0 ? "the given note is " + noteLabelFull(question.startMidi) : "it's " + noteLabelFull(question.targetMidi))) : /*#__PURE__*/React.createElement("span", {
     className: "muted",
     style: {
       fontWeight: 400,
       fontSize: 12
     }
-  }, "Pick letter, accidental & octave")), /*#__PURE__*/React.createElement("div", {
+  }, guessBoth ? (stage === 0 ? "Step 1 of 2 · name the given note" : (firstDone ? "Given note correct · now name the target" : "Step 2 of 2 · name the target")) : "Pick letter, accidental & octave")), /*#__PURE__*/React.createElement("div", {
     className: 'answer-group' + (feedback ? ' locked' : '')
   }, /*#__PURE__*/React.createElement("div", {
     className: "answer-label"

@@ -3,24 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Progressive Metronome</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<title>Metronome</title>
+<meta name="apple-mobile-web-app-title" content="Metronome">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #f5f0e8;
-    --ink: #1a1612;
-    --mid: #6b5f52;
-    --accent: #c0392b;
-    --accent2: #e67e22;
-    --line: rgba(26,22,18,0.12);
-    --mono: 'DM Mono', monospace;
-    --display: 'Syne', sans-serif;
+    --bg: #1b120d;
+    --ink: #f2ead6;
+    --mid: #a89173;
+    --accent: #a85340;
+    --accent2: #cbaa7d;
+    --line: rgba(242,234,214,0.14);
+    --mono: 'IBM Plex Mono', monospace;
+    --display: 'Fraunces', serif;
   }
 
   body {
-    background: var(--bg);
+    background: radial-gradient(ellipse at 50% -10%, #2e1d14 0%, #1b120d 55%, #150d09 100%);
     color: var(--ink);
     font-family: var(--mono);
     min-height: 100vh;
@@ -115,7 +116,7 @@
     height: 14px;
     border-radius: 50%;
     background: var(--line);
-    border: 2px solid rgba(26,22,18,0.2);
+    border: 2px solid rgba(242,234,214,0.2);
     transition: background 0.05s, border-color 0.05s, transform 0.05s;
   }
 
@@ -145,8 +146,8 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: white;
-    border: 1.5px solid rgba(26,22,18,0.18);
+    background: #261811;
+    border: 1.5px solid rgba(242,234,214,0.18);
     border-radius: 6px;
     padding: 6px 10px;
   }
@@ -203,8 +204,8 @@
     text-transform: uppercase;
     padding: 4px 10px;
     border-radius: 4px;
-    border: 1.5px solid rgba(26,22,18,0.18);
-    background: white;
+    border: 1.5px solid rgba(242,234,214,0.18);
+    background: #261811;
     color: var(--mid);
     cursor: pointer;
     flex: 1;
@@ -226,7 +227,7 @@
 
   .progress-bar-wrap {
     height: 4px;
-    background: rgba(26,22,18,0.1);
+    background: rgba(242,234,214,0.1);
     border-radius: 2px;
     overflow: hidden;
     margin-top: 8px;
@@ -299,8 +300,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: white;
-    border: 1.5px solid rgba(26,22,18,0.18);
+    background: #261811;
+    border: 1.5px solid rgba(242,234,214,0.18);
     border-radius: 6px;
     padding: 10px 12px;
   }
@@ -319,7 +320,7 @@
     position: relative;
     width: 44px;
     height: 24px;
-    background: rgba(26,22,18,0.2);
+    background: rgba(242,234,214,0.2);
     border-radius: 12px;
     cursor: pointer;
     transition: background 0.2s;
@@ -332,7 +333,7 @@
     left: 2px;
     width: 20px;
     height: 20px;
-    background: white;
+    background: #261811;
     border-radius: 50%;
     transition: transform 0.2s;
     box-shadow: 0 1px 3px rgba(0,0,0,0.2);
@@ -358,8 +359,8 @@
     font-weight: 500;
     padding: 10px 6px;
     border-radius: 5px;
-    border: 1.5px solid rgba(26,22,18,0.18);
-    background: white;
+    border: 1.5px solid rgba(242,234,214,0.18);
+    background: #261811;
     color: var(--ink);
     cursor: pointer;
     text-align: center;
@@ -385,8 +386,8 @@
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    border: 2px solid rgba(26,22,18,0.25);
-    background: white;
+    border: 2px solid rgba(242,234,214,0.25);
+    background: #261811;
     color: var(--mid);
     font-family: var(--display);
     font-weight: 700;
@@ -400,14 +401,14 @@
   .beat-chk.active {
     background: var(--accent);
     border-color: var(--accent);
-    color: white;
+    color: #f2ead6;
   }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <div class="title">Progressive<br>Metronome</div>
+    <div class="title">Metronome<br>Metronome</div>
     <div class="subtitle">4/4 Time · Gradual Tempo Increase</div>
   </div>
 

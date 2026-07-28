@@ -1,7 +1,8 @@
 // Music-Stuff offline service worker
-const CACHE = 'music-stuff-v1';
+const CACHE = 'music-stuff-v2';
 const PRECACHE = [
   './siren-app.html',
+  './shapes.html',
   './progressive-metronome.html',
   './tempo-shift.html',
   './rangefinder-interval-trainer.html',

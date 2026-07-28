@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Topline — Fret Memorizer</title>
+<title>Memorization</title>
+<meta name="apple-mobile-web-app-title" content="Memorization">
 <style>
-  html, body { margin: 0; padding: 0; min-height: 100%; background: #181210; }
-  #fallback { color: #efe6d5; font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; line-height: 1.6; }
+  html, body { margin: 0; padding: 0; min-height: 100%; background: #1b120d; }
+  #fallback { color: #f2ead6; font-family: system-ui, sans-serif; max-width: 420px; margin: 40px auto; padding: 0 16px; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -734,11 +735,11 @@ function ToplineApp() {
   }, /*#__PURE__*/React.createElement("style", null, `
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
         :root {
-          --bg:#181210; --bg-2:#120d0b; --panel:#221b15; --panel-soft:#2a2119; --border:#3c2e22;
-          --rust:#c2693f; --rust-soft:#8f4a2c; --sage:#8fa06b; --clay:#a8483a; --cream:#efe6d5; --muted:#9c8b76;
+          --bg:#1b120d; --bg-2:#150d09; --panel:#261811; --panel-soft:#2e2014; --border:#46301d;
+          --rust:#cbaa7d; --rust-soft:#9a7d55; --sage:#8fa06b; --clay:#a85340; --cream:#f2ead6; --muted:#a89173;
         }
         * { box-sizing:border-box; }
-        .shell { min-height:100vh; width:100%; color:var(--cream); font-family:'Inter',sans-serif; background:radial-gradient(ellipse at 50% -10%, #2a2018 0%, var(--bg) 55%, var(--bg-2) 100%); display:flex; justify-content:center; padding:22px 16px 36px; }
+        .shell { min-height:100vh; width:100%; color:var(--cream); font-family:'Inter',sans-serif; background:radial-gradient(ellipse at 50% -10%, #2e1d14 0%, var(--bg) 55%, var(--bg-2) 100%); display:flex; justify-content:center; padding:22px 16px 36px; }
         .panel { width:100%; max-width:420px; animation:rise .5s ease both; }
         @keyframes rise { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
         .eyebrow { font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); font-weight:600; }
@@ -749,7 +750,7 @@ function ToplineApp() {
         .card { background:var(--panel); border:1px solid var(--border); border-radius:20px; padding:18px 18px; box-shadow:0 20px 50px -25px rgba(0,0,0,.7); }
 
         .tgl { min-width:48px; padding:4px 12px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; transition:all .15s; }
-        .tgl.on { background:var(--rust); border-color:var(--rust); color:#1a1109; }
+        .tgl.on { background:var(--rust); border-color:var(--rust); color:#20110a; }
         .string-label-col.collapsed { width:14px !important; }
         .string-label-col.collapsed .string-label { display:none; }
         .side-dot { position:absolute; width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #f2ead6, #b6a986 70%, #8c7f5e); box-shadow:inset 0 0 1px rgba(0,0,0,.4); transform:translate(-50%,-50%); pointer-events:none; }
@@ -757,7 +758,7 @@ function ToplineApp() {
         .step-btn { width:26px; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--panel); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:600; cursor:pointer; line-height:1; }
         .step-btn:active { background:var(--rust-soft); }
         .str-btn { min-width:44px; padding:6px 8px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
-        .str-btn.on { background:var(--rust); border-color:var(--rust); color:#1a1109; }
+        .str-btn.on { background:var(--rust); border-color:var(--rust); color:#20110a; }
         .str-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; }
         .settings-panel { background:var(--panel-soft); border:1px solid var(--border); border-radius:14px; padding:14px 16px; margin-bottom:14px; font-size:13px; }
         .settings-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -793,15 +794,15 @@ function ToplineApp() {
         .string-label-col { position:relative; width:24px; height:${FRETBOARD_HEIGHT}px; flex-shrink:0; }
         .string-label { position:absolute; left:0; transform:translateY(-50%); white-space:nowrap; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--muted); transition:color .15s; }
         .string-label.hot { color:var(--cream); }
-        .fretboard { position:relative; flex:1; height:${FRETBOARD_HEIGHT}px; border:1px solid #2a1d12; border-radius:8px; background:linear-gradient(180deg,#3a2a1b 0%,#241910 55%,#1a1109 100%); box-shadow:inset 0 2px 8px rgba(0,0,0,.4); overflow:visible; }
-        .hot-band { position:absolute; left:0; right:0; background:rgba(194,105,63,.12); border-top:1px solid rgba(194,105,63,.35); border-bottom:1px solid rgba(194,105,63,.35); pointer-events:none; }
+        .fretboard { position:relative; flex:1; height:${FRETBOARD_HEIGHT}px; border:1px solid #3a2114; border-radius:8px; background:linear-gradient(180deg,#4a2c1d 0%,#301a10 55%,#20110a 100%); box-shadow:inset 0 2px 8px rgba(0,0,0,.4); overflow:visible; }
+        .hot-band { position:absolute; left:0; right:0; background:rgba(203,170,125,.12); border-top:1px solid rgba(203,170,125,.35); border-bottom:1px solid rgba(203,170,125,.35); pointer-events:none; }
         .string-line { position:absolute; left:3%; right:1%; border-radius:2px; background:linear-gradient(180deg,#fdfdfd 0%,#d2d2d2 40%,#9a9a9a 75%,#6f6f6f 100%); box-shadow:0 1px 2px rgba(0,0,0,.55); }
         .string-line.dim { opacity:.28; filter:saturate(.4); }
         .fret-wire { position:absolute; top:6px; bottom:6px; width:3px; border-radius:1px; transform:translateX(-50%); background:linear-gradient(90deg,#6b4f24 0%,#d8b46a 45%,#f1d79b 50%,#d8b46a 55%,#6b4f24 100%); box-shadow:0 0 2px rgba(0,0,0,.5); }
         .fret-wire.nut { width:6px; border-radius:2px; background:linear-gradient(90deg,#bcae8d,#f4ecd6 50%,#c7bb9c); box-shadow:0 0 3px rgba(0,0,0,.45); }
         .fret-inlay { position:absolute; width:7px; height:7px; border-radius:50%; background:radial-gradient(circle at 35% 35%, #f2ead6, #b6a986 70%, #8c7f5e); transform:translate(-50%,-50%); box-shadow:inset 0 0 1px rgba(0,0,0,.4); }
         .marker { position:absolute; width:16px; height:16px; border-radius:50%; transform:translate(-50%,-50%); z-index:3; transition:background .15s; }
-        .marker.given { background:var(--cream); border:2px solid #1c140e; box-shadow:0 0 10px rgba(239,230,213,.35); }
+        .marker.given { background:var(--cream); border:2px solid #1c140e; box-shadow:0 0 10px rgba(242,234,214,.35); }
         .marker.given.correct { background:var(--sage); }
         .marker.given.wrong { background:var(--clay); }
         .fret-number-row { position:relative; flex:1; height:13px; }
@@ -870,7 +871,7 @@ function ToplineApp() {
     className: "eyebrow"
   }, "Fretboard memorizer"), /*#__PURE__*/React.createElement("div", {
     className: "wordmark"
-  }, "Topline")), started && !sessionEnded && /*#__PURE__*/React.createElement("button", {
+  }, "Memorization")), started && !sessionEnded && /*#__PURE__*/React.createElement("button", {
     className: "icon-btn",
     onClick: () => setShowSettings(v => !v),
     "aria-label": "Settings"

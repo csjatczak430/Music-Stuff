@@ -7,6 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Siren Practice</title>
     <style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
         * {
             margin: 0;
             padding: 0;
@@ -15,9 +16,9 @@
         }
 
         body {
-            font-family: 'Courier New', monospace;
-            background: linear-gradient(135deg, #2a1f1a 0%, #3d2817 100%);
-            color: #e8d4c4;
+            font-family: 'IBM Plex Mono', monospace;
+            background: radial-gradient(ellipse at 50% -10%, #2e1d14 0%, #1b120d 55%, #150d09 100%);
+            color: #f2ead6;
             min-height: 100vh;
             display: flex;
             align-items: flex-start;
@@ -26,8 +27,8 @@
         }
 
         .container {
-            background: #1a1410;
-            border: 2px solid #8b6f47;
+            background: #1b120d;
+            border: 2px solid #97805f;
             border-radius: 4px;
             padding: 28px;
             max-width: 560px;
@@ -39,14 +40,14 @@
             font-size: 26px;
             margin-bottom: 24px;
             text-align: center;
-            color: #d4a574;
+            color: #cbaa7d;
             letter-spacing: 1px;
         }
 
         .section {
             margin-bottom: 24px;
             padding-bottom: 24px;
-            border-bottom: 1px solid #8b6f47;
+            border-bottom: 1px solid #97805f;
         }
 
         .section:last-of-type {
@@ -58,7 +59,7 @@
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 1.5px;
-            color: #b8956a;
+            color: #a89173;
             margin-bottom: 8px;
             font-weight: 500;
         }
@@ -76,11 +77,11 @@
 
         input[type="number"],
         select {
-            background: #2a1f1a;
-            border: 1px solid #8b6f47;
-            color: #e8d4c4;
+            background: #261811;
+            border: 1px solid #97805f;
+            color: #f2ead6;
             padding: 12px;
-            font-family: 'Courier New', monospace;
+            font-family: 'IBM Plex Mono', monospace;
             font-size: 16px;
             border-radius: 2px;
             transition: border-color 0.2s;
@@ -90,8 +91,8 @@
         input[type="number"]:focus,
         select:focus {
             outline: none;
-            border-color: #d4a574;
-            background: #332411;
+            border-color: #cbaa7d;
+            background: #2e2014;
         }
 
         select {
@@ -101,11 +102,11 @@
         }
 
         button {
-            background: #8b6f47;
+            background: #97805f;
             border: none;
-            color: #1a1410;
+            color: #1b120d;
             padding: 14px 16px;
-            font-family: 'Courier New', monospace;
+            font-family: 'IBM Plex Mono', monospace;
             font-size: 13px;
             font-weight: 600;
             text-transform: uppercase;
@@ -117,7 +118,7 @@
         }
 
         button:active:not(:disabled) {
-            background: #d4a574;
+            background: #cbaa7d;
         }
 
         button:disabled {
@@ -141,14 +142,14 @@
         }
 
         .display-value {
-            background: #2a1f1a;
-            border: 1px solid #8b6f47;
+            background: #261811;
+            border: 1px solid #97805f;
             padding: 12px;
             border-radius: 2px;
             margin-bottom: 16px;
             font-size: 13px;
             text-align: center;
-            color: #d4a574;
+            color: #cbaa7d;
             font-weight: 500;
         }
 
@@ -162,17 +163,17 @@
         .mode-button {
             padding: 10px;
             font-size: 12px;
-            background: #2a1f1a;
-            border: 1px solid #8b6f47;
-            color: #e8d4c4;
+            background: #261811;
+            border: 1px solid #97805f;
+            color: #f2ead6;
             cursor: pointer;
             border-radius: 2px;
         }
 
         .mode-button.active {
-            background: #8b6f47;
-            color: #1a1410;
-            border-color: #d4a574;
+            background: #97805f;
+            color: #1b120d;
+            border-color: #cbaa7d;
         }
 
         .stepper {
@@ -193,8 +194,8 @@
         }
 
         .status-display {
-            background: #2a1f1a;
-            border: 1px solid #8b6f47;
+            background: #261811;
+            border: 1px solid #97805f;
             padding: 16px;
             border-radius: 2px;
             margin-bottom: 20px;
@@ -203,7 +204,7 @@
 
         .status-label {
             font-size: 11px;
-            color: #8b6f47;
+            color: #97805f;
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 8px;
@@ -211,18 +212,18 @@
 
         .status-value {
             font-size: 32px;
-            color: #d4a574;
+            color: #cbaa7d;
             font-weight: 600;
         }
 
         .status-sub {
             font-size: 12px;
-            color: #8b6f47;
+            color: #97805f;
             margin-top: 8px;
         }
 
         .breathing-text {
-            color: #6f8b47 !important;
+            color: #8fa06b !important;
             font-size: 16px !important;
             font-weight: 700;
         }
@@ -241,14 +242,14 @@
         .tab-button {
             padding: 12px;
             font-size: 13px;
-            background: #2a1f1a;
-            border: 1px solid #8b6f47;
-            color: #e8d4c4;
+            background: #261811;
+            border: 1px solid #97805f;
+            color: #f2ead6;
         }
 
         .tab-button.active {
-            background: #8b6f47;
-            color: #1a1410;
+            background: #97805f;
+            color: #1b120d;
         }
 
         .pitch-display {
@@ -258,27 +259,27 @@
 
         .pitch-note {
             font-size: 64px;
-            color: #d4a574;
+            color: #cbaa7d;
             font-weight: 700;
             line-height: 1.1;
         }
 
         .pitch-freq {
             font-size: 16px;
-            color: #b8956a;
+            color: #a89173;
             margin-top: 8px;
         }
 
         .pitch-cents {
             font-size: 13px;
-            color: #8b6f47;
+            color: #97805f;
             margin-top: 8px;
         }
 
         .cents-meter {
             height: 8px;
-            background: #2a1f1a;
-            border: 1px solid #8b6f47;
+            background: #261811;
+            border: 1px solid #97805f;
             border-radius: 4px;
             margin: 16px auto 0;
             max-width: 280px;
@@ -290,7 +291,7 @@
             top: -4px;
             width: 3px;
             height: 14px;
-            background: #d4a574;
+            background: #cbaa7d;
             border-radius: 2px;
             left: 50%;
             transition: left 0.08s linear;
@@ -302,11 +303,11 @@
             left: 50%;
             width: 1px;
             height: 100%;
-            background: #8b6f47;
+            background: #97805f;
         }
 
         .mic-error {
-            color: #c0704d;
+            color: #cbaa7d;
             font-size: 12px;
             text-align: center;
             margin-top: 12px;
@@ -397,7 +398,7 @@
                     <button id="startBtn" onclick="startSiren()">Start Siren</button>
                 </div>
                 <div class="button-group full">
-                    <button id="descendBtn" class="hidden" onclick="toggleDirection()" style="background: #6f8b47;">Begin Descent</button>
+                    <button id="descendBtn" class="hidden" onclick="toggleDirection()" style="background: #8fa06b;">Begin Descent</button>
                 </div>
             </div>
         </div>
@@ -655,7 +656,7 @@
             var db = document.getElementById('descendBtn');
             db.classList.remove('hidden');
             db.textContent = 'Begin Descent';
-            db.style.background = '#6f8b47';
+            db.style.background = '#8fa06b';
             document.getElementById('modeIndicator').textContent = 'Ascending';
 
             animationId = requestAnimationFrame(tick);
@@ -691,11 +692,11 @@
             var mi = document.getElementById('modeIndicator');
             if (isAscending) {
                 btn.textContent = 'Begin Descent';
-                btn.style.background = '#6f8b47';
+                btn.style.background = '#8fa06b';
                 mi.textContent = 'Ascending';
             } else {
                 btn.textContent = 'Begin Ascent';
-                btn.style.background = '#8b6f47';
+                btn.style.background = '#97805f';
                 mi.textContent = 'Descending';
             }
         }
@@ -743,12 +744,7 @@
                         currentFreq = runEndFreq * Math.pow(runStartFreq / runEndFreq, progress);
                         if (progress >= 1) {
                             currentFreq = runStartFreq;
-                            isAscending = true;
-                            timeInPhase = 0;
-                            currentBreathIndex = 0;
-                            document.getElementById('descendBtn').textContent = 'Begin Descent';
-                            document.getElementById('descendBtn').style.background = '#6f8b47';
-                            document.getElementById('modeIndicator').textContent = 'Ascending';
+                            // Hold the bottom note — wait for Begin Ascent, mirroring the top hold
                         }
                     }
                     setVoiceFreq(currentFreq);
