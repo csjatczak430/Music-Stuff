@@ -544,6 +544,36 @@ const DEFAULT_TUNING = [{
   acc: 'natural',
   octave: 2
 }];
+const TUNING_PRESETS = [
+  { label: 'Standard', defs: [
+    { letter: 'E', acc: 'natural', octave: 4 }, { letter: 'B', acc: 'natural', octave: 3 },
+    { letter: 'G', acc: 'natural', octave: 3 }, { letter: 'D', acc: 'natural', octave: 3 },
+    { letter: 'A', acc: 'natural', octave: 2 }, { letter: 'E', acc: 'natural', octave: 2 } ] },
+  { label: 'Drop D', defs: [
+    { letter: 'E', acc: 'natural', octave: 4 }, { letter: 'B', acc: 'natural', octave: 3 },
+    { letter: 'G', acc: 'natural', octave: 3 }, { letter: 'D', acc: 'natural', octave: 3 },
+    { letter: 'A', acc: 'natural', octave: 2 }, { letter: 'D', acc: 'natural', octave: 2 } ] },
+  { label: 'Drop C', defs: [
+    { letter: 'D', acc: 'natural', octave: 4 }, { letter: 'A', acc: 'natural', octave: 3 },
+    { letter: 'F', acc: 'natural', octave: 3 }, { letter: 'C', acc: 'natural', octave: 3 },
+    { letter: 'G', acc: 'natural', octave: 2 }, { letter: 'C', acc: 'natural', octave: 2 } ] },
+  { label: 'C# Standard', defs: [
+    { letter: 'C', acc: 'sharp', octave: 4 }, { letter: 'G', acc: 'sharp', octave: 3 },
+    { letter: 'E', acc: 'natural', octave: 3 }, { letter: 'B', acc: 'natural', octave: 2 },
+    { letter: 'F', acc: 'sharp', octave: 2 }, { letter: 'C', acc: 'sharp', octave: 2 } ] },
+  { label: 'Drop A', defs: [
+    { letter: 'B', acc: 'natural', octave: 3 }, { letter: 'F', acc: 'sharp', octave: 3 },
+    { letter: 'D', acc: 'natural', octave: 3 }, { letter: 'A', acc: 'natural', octave: 2 },
+    { letter: 'E', acc: 'natural', octave: 2 }, { letter: 'A', acc: 'natural', octave: 1 } ] },
+  { label: 'B Standard', defs: [
+    { letter: 'B', acc: 'natural', octave: 3 }, { letter: 'F', acc: 'sharp', octave: 3 },
+    { letter: 'D', acc: 'natural', octave: 3 }, { letter: 'A', acc: 'natural', octave: 2 },
+    { letter: 'E', acc: 'natural', octave: 2 }, { letter: 'B', acc: 'natural', octave: 1 } ] },
+  { label: 'Signature', defs: [
+    { letter: 'D', acc: 'natural', octave: 4 }, { letter: 'A', acc: 'natural', octave: 3 },
+    { letter: 'F', acc: 'natural', octave: 3 }, { letter: 'C', acc: 'natural', octave: 3 },
+    { letter: 'F', acc: 'natural', octave: 2 }, { letter: 'C', acc: 'natural', octave: 2 } ] }
+];
 const FRETBOARD_HEIGHT = 120;
 const STRING_PAD = 14;
 
@@ -668,11 +698,14 @@ function RangefinderApp() {
   const [guessBoth, setGuessBoth] = useState(false);
   const guessBothRef = useRef(false);
   useEffect(() => { guessBothRef.current = guessBoth; }, [guessBoth]);
-  const [stage, setStage] = useState(1); // 0 = name the given note (hard mode), 1 = name the target
+  const [stage, setStage] = useState(2); // 1 = first note + interval, 2 = second note
   const [firstDone, setFirstDone] = useState(false);
+  const [stage1, setStage1] = useState(null);
+  const guessIntervalRef = useRef(false);
   const [hideFirstNote, setHideFirstNote] = useState(false);
   const [hideInterval, setHideInterval] = useState(false);
-  const [guessInterval, setGuessInterval] = useState(false);
+  const [guessInterval, setGuessInterval] = useState(true);
+  useEffect(() => { guessIntervalRef.current = guessInterval; }, [guessInterval]);
   const [selectedIntervalSt, setSelectedIntervalSt] = useState(null);
   const [selectedIntervalName, setSelectedIntervalName] = useState(null);
   const [activeTone, setActiveTone] = useState(null);
@@ -682,9 +715,9 @@ function RangefinderApp() {
   });
   const [history, setHistory] = useState([]); // correct answers: { time, st, name }
   const [showSettings, setShowSettings] = useState(false);
-  const [showNumbers, setShowNumbers] = useState(true);
+  const [showNumbers, setShowNumbers] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
-  const [shuffleLetters, setShuffleLetters] = useState(false);
+  const [shuffleLetters, setShuffleLetters] = useState(true);
   const displayLetters = React.useMemo(() => {
     if (!shuffleLetters) return LETTERS;
     const a = LETTERS.slice();
@@ -694,12 +727,7 @@ function RangefinderApp() {
     }
     return a;
   }, [question, shuffleLetters]);
-  const displayAccidentals = React.useMemo(() => {
-    if (!shuffleLetters) return ACCIDENTALS;
-    const a = ACCIDENTALS.slice();
-    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
-    return a;
-  }, [question, shuffleLetters]);
+  const displayAccidentals = ACCIDENTALS;
   const displayIntervalNames = React.useMemo(() => {
     if (!shuffleLetters) return INTERVAL_NAMES;
     const a = INTERVAL_NAMES.slice();
@@ -713,7 +741,7 @@ function RangefinderApp() {
     return a;
   }, [question, shuffleLetters]);
 
-  const [stringDefs, setStringDefs] = useState(DEFAULT_TUNING);
+  const [stringDefs, setStringDefs] = useState(TUNING_PRESETS[2].defs);
   const [intervalChoice, setIntervalChoice] = useState('random'); // 'random' | '1'..'12'
   const [timeLimitEnabled, setTimeLimitEnabled] = useState(false);
   const [timeLimitSeconds, setTimeLimitSeconds] = useState(10);
@@ -793,7 +821,8 @@ function RangefinderApp() {
     setSelectedIntervalName(null);
     setFeedback(null);
     answeredRef.current = false;
-    setStage(guessBothRef.current ? 0 : 1);
+    setStage((guessBothRef.current || guessIntervalRef.current) ? 1 : 2);
+    setStage1(null);
     setFirstDone(false);
     startTimeRef.current = Date.now();
     setLiveElapsed(0);
@@ -808,37 +837,67 @@ function RangefinderApp() {
   const handleReplay = () => question && playQuestionAudio(question);
   const handleSubmit = useCallback((isTimeout = false) => {
     if (answeredRef.current || !question) return;
-    if (!isTimeout && (selectedLetter === null || selectedOctave === null)) return;
-    if (!isTimeout && guessInterval && (selectedIntervalSt === null || selectedIntervalName === null)) return;
-    answeredRef.current = true;
     const elapsed = (Date.now() - startTimeRef.current) / 1000;
-    let correct = false;
-    if (!isTimeout) {
+    const needStage1 = guessBoth || guessInterval;
+    const midiOf = () => {
       const off = ACCIDENTALS.find(a => a.id === selectedAccidental).offset;
-      const answerMidi = (selectedOctave + 1) * 12 + LETTER_BASE[selectedLetter] + off;
-      if (guessBoth && stage === 0) {
-        if (answerMidi === question.startMidi) {
-          answeredRef.current = false;
-          setStage(1);
-          setFirstDone(true);
-          setSelectedLetter(null);
-          setSelectedAccidental('natural');
-          setSelectedOctave(null);
-          return;
-        }
-        setFeedback({ correct: false, isTimeout: false, time: elapsed, failedStage: 0 });
-        setStats(s => ({ correct: s.correct, total: s.total + 1 }));
-        return;
+      return (selectedOctave + 1) * 12 + LETTER_BASE[selectedLetter] + off;
+    };
+
+    // ---- Stage 1: first note and/or the interval. Never ends the question. ----
+    if (!isTimeout && stage === 1) {
+      if (guessBoth && (selectedLetter === null || selectedOctave === null)) return;
+      if (guessInterval && (selectedIntervalSt === null || selectedIntervalName === null)) return;
+      const res = {};
+      if (guessBoth) {
+        const am = midiOf();
+        res.firstNoteAnswer = am;
+        res.firstNoteOk = am === question.startMidi;
       }
-      correct = answerMidi === question.targetMidi;
       if (guessInterval) {
-        correct = correct && selectedIntervalSt === question.interval.st && selectedIntervalName === question.interval.name;
+        res.pickedName = selectedIntervalName;
+        res.pickedSt = selectedIntervalSt;
+        res.intervalNameOk = selectedIntervalName === question.interval.name;
+        res.intervalStOk = selectedIntervalSt === question.interval.st;
       }
+      setStage1(res);
+      setStage(2);
+      setSelectedLetter(null);
+      setSelectedAccidental('natural');
+      setSelectedOctave(null);
+      return;
     }
+
+    // ---- Stage 2 (or a timeout at any stage): grade everything and end the question. ----
+    if (!isTimeout && (selectedLetter === null || selectedOctave === null)) return;
+    answeredRef.current = true;
+    const s1 = (stage === 1 ? {} : (stage1 || {}));
+    let secondNoteOk = false, secondAnswer = null;
+    if (!isTimeout) {
+      secondAnswer = midiOf();
+      secondNoteOk = secondAnswer === question.targetMidi;
+    }
+    const graded = [secondNoteOk];
+    if (guessBoth) graded.push(!!s1.firstNoteOk);
+    if (guessInterval) { graded.push(!!s1.intervalNameOk); graded.push(!!s1.intervalStOk); }
+    const rightCount = graded.filter(Boolean).length;
+    const correct = rightCount === graded.length && !isTimeout;
+    const partial = !correct && rightCount > 0;
     setFeedback({
       correct,
+      partial,
       isTimeout,
-      time: elapsed
+      time: elapsed,
+      askedFirst: guessBoth,
+      askedInterval: guessInterval,
+      firstNoteOk: !!s1.firstNoteOk,
+      firstNoteAnswer: s1.firstNoteAnswer != null ? s1.firstNoteAnswer : null,
+      intervalNameOk: !!s1.intervalNameOk,
+      intervalStOk: !!s1.intervalStOk,
+      pickedName: s1.pickedName != null ? s1.pickedName : null,
+      pickedSt: s1.pickedSt != null ? s1.pickedSt : null,
+      secondNoteOk,
+      secondAnswer
     });
     setStats(s => ({
       correct: s.correct + (correct ? 1 : 0),
@@ -851,7 +910,7 @@ function RangefinderApp() {
         name: question.interval.name
       }]);
     }
-  }, [question, selectedLetter, selectedAccidental, selectedOctave, guessBoth, stage, guessInterval, selectedIntervalSt, selectedIntervalName]);
+  }, [question, selectedLetter, selectedAccidental, selectedOctave, guessBoth, guessInterval, stage, stage1, selectedIntervalSt, selectedIntervalName]);
 
   // Single timer drives both the live stopwatch and (optionally) the countdown.
   useEffect(() => {
@@ -972,6 +1031,9 @@ function RangefinderApp() {
         .settings-label { font-size:13px; color:var(--cream); }
         .settings-divider { height:1px; background:var(--border); margin:14px 0; }
         .settings-hint { font-size:11px; color:var(--muted); line-height:1.5; margin:2px 0 12px; }
+        .tuning-preset-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+        .preset-btn { padding:6px 11px; border-radius:8px; border:1px solid var(--border); background:var(--panel-soft); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; }
+        .preset-btn:active { background:var(--rust); border-color:var(--rust); color:#20110a; }
         .switch { width:38px; height:22px; border-radius:999px; background:var(--border); position:relative; cursor:pointer; flex-shrink:0; transition:background .15s; }
         .switch.on { background:var(--rust); }
         .switch-knob { position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:var(--cream); transition:transform .15s; }
@@ -1058,6 +1120,11 @@ function RangefinderApp() {
         .status { min-height:24px; display:flex; align-items:center; justify-content:center; gap:6px; font-size:13px; font-weight:600; margin-bottom:10px; text-align:center; }
         .status.correct { color:var(--sage); }
         .status.wrong { color:var(--clay); }
+        .status.partial { color:var(--rust); }
+        .breakdown { display:flex; flex-direction:column; align-items:center; gap:3px; margin:-2px 0 10px; width:100%; }
+        .breakdown-row { display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:600; line-height:1.4; }
+        .breakdown-row.ok { color:var(--sage); }
+        .breakdown-row.bad { color:var(--clay); }
         .status .muted { color:var(--muted); font-weight:400; }
         .answer-group { transition:opacity .15s; }
         .answer-group.locked { opacity:.5; pointer-events:none; }
@@ -1125,7 +1192,7 @@ function RangefinderApp() {
   ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
     /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Shuffle answer buttons"),
     /*#__PURE__*/React.createElement("button", { className: 'tgl' + (shuffleLetters ? ' on' : ''), onClick: () => setShuffleLetters(v => !v) }, shuffleLetters ? 'On' : 'Off')
-  ), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Hide given note: the first note stays a ? until you answer, no extra guess required. Guess both notes: a stricter two-step mode requiring you to name the given note before the target is revealed. Hide interval / Guess interval: the same idea for the interval shown above the fretboard — hide just displays a ? until you answer, guess also requires picking the interval's name and semitone count. Realism mode: turn numbers and labels off to drill the neck like a real guitar. Shuffle reorders every answer grid — letters, accidentals, octaves, interval names, semitones — on every question, so finger memory can't help you."),
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Guess both notes and/or Guess interval turn the question into two steps: step 1 asks for the first note and/or the interval, step 2 then asks for the second note. Each part is graded on its own \u2014 getting the interval wrong does not mark your notes wrong, and the report after every question names the exact correct answer for each part alongside what you picked. Hide given note / Hide interval simply blank out that info with a ? without asking you to name it. Realism mode: turn numbers and labels off to drill the neck like a real guitar. Shuffle reorders the letter, octave, interval-name and semitone grids every question (accidentals stay put) so finger memory can't help you."),
   /*#__PURE__*/React.createElement("div", { className: "settings-divider" }), /*#__PURE__*/React.createElement("div", {
     className: "settings-row",
     style: {
@@ -1133,7 +1200,11 @@ function RangefinderApp() {
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "settings-label"
-  }, "Tuning (string 1 = top)")), stringDefs.map((def, i) => {
+  }, "Tuning (string 1 = top)")), /*#__PURE__*/React.createElement("div", { className: "tuning-preset-row" }, TUNING_PRESETS.map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.label,
+    className: "preset-btn",
+    onClick: () => setStringDefs(p.defs)
+  }, p.label))), stringDefs.map((def, i) => {
     const valid = /^[A-G]$/i.test((def.letter || '').trim());
     return /*#__PURE__*/React.createElement("div", {
       className: "tuning-row",
@@ -1252,7 +1323,7 @@ function RangefinderApp() {
     className: "eyebrow"
   }, "Starting note"), /*#__PURE__*/React.createElement("div", {
     className: "note-display"
-  }, (guessBoth && stage === 0 && !feedback) || (hideFirstNote && !feedback) ? '?' : noteLabel(question.startMidi)), /*#__PURE__*/React.createElement("div", {
+  }, (!feedback && ((guessBoth && stage === 1) || hideFirstNote)) ? '?' : noteLabel(question.startMidi)), /*#__PURE__*/React.createElement("div", {
     className: "interval-row"
   }, question.direction === 'above' ? /*#__PURE__*/React.createElement(ArrowUp, {
     size: 16
@@ -1372,30 +1443,22 @@ function RangefinderApp() {
   }, "Elapsed")), timeLimitEnabled && !feedback && countdownDisplay !== null && /*#__PURE__*/React.createElement("div", {
     className: 'countdown' + (countdownDisplay <= 3 ? ' urgent' : '')
   }, countdownDisplay.toFixed(1), "s remaining"), /*#__PURE__*/React.createElement("div", {
-    className: 'status' + (feedback ? feedback.correct ? ' correct' : ' wrong' : '')
-  }, feedback ? feedback.isTimeout ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(X, {
-    size: 15
-  }), " Time's up ", /*#__PURE__*/React.createElement("span", {
-    className: "muted"
-  }, "· it's ", noteLabelFull(question.targetMidi))) : feedback.correct ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Check, {
-    size: 15
-  }), " Correct ", /*#__PURE__*/React.createElement("span", {
-    className: "muted"
-  }, "· ", feedback.time.toFixed(1), "s")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(X, {
-    size: 15
-  }), " Not quite ", /*#__PURE__*/React.createElement("span", {
-    className: "muted"
-  }, "· ", feedback.failedStage === 0 ? "the given note is " + noteLabelFull(question.startMidi) : "it's " + noteLabelFull(question.targetMidi))) : /*#__PURE__*/React.createElement("span", {
-    className: "muted",
-    style: {
-      fontWeight: 400,
-      fontSize: 12
-    }
-  }, guessBoth ? (stage === 0 ? "Step 1 of 2 · name the given note" : (firstDone ? "Given note correct · now name the target" : "Step 2 of 2 · name the target")) : (guessInterval ? "Pick the note & identify the interval" : "Pick letter, accidental & octave"))), /*#__PURE__*/React.createElement("div", {
+    className: 'status' + (feedback ? (feedback.correct ? ' correct' : (feedback.partial ? ' partial' : ' wrong')) : '')
+  }, feedback ? (feedback.isTimeout ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(X, { size: 15 }), " Time's up") : feedback.correct ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Check, { size: 15 }), " Correct ", /*#__PURE__*/React.createElement("span", { className: "muted" }, "\u00b7 ", feedback.time.toFixed(1), "s")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(X, { size: 15 }), feedback.partial ? " Partly right" : " Not quite")) : /*#__PURE__*/React.createElement("span", { className: "muted", style: { fontWeight: 400, fontSize: 12 } }, stage === 1 ? ((guessBoth && guessInterval) ? "Step 1 of 2 \u00b7 name the FIRST note + the interval" : (guessBoth ? "Step 1 of 2 \u00b7 name the FIRST note (the filled dot)" : "Step 1 of 2 \u00b7 identify the interval")) : ((guessBoth || guessInterval) ? "Step 2 of 2 \u00b7 name the SECOND note (the hollow ring)" : "Name the SECOND note (the hollow ring)"))),
+  feedback ? /*#__PURE__*/React.createElement("div", { className: "breakdown" }, [
+    feedback.askedFirst ? { k: 'f', label: 'First note (given)', ok: feedback.firstNoteOk, want: noteLabelFull(question.startMidi), got: feedback.firstNoteAnswer != null ? noteLabelFull(feedback.firstNoteAnswer) : 'no answer' } : null,
+    feedback.askedInterval ? { k: 'n', label: 'Interval name', ok: feedback.intervalNameOk, want: question.interval.name, got: feedback.pickedName != null ? feedback.pickedName : 'no answer' } : null,
+    feedback.askedInterval ? { k: 's', label: 'Semitones', ok: feedback.intervalStOk, want: question.interval.st + ' st', got: feedback.pickedSt != null ? (feedback.pickedSt + ' st') : 'no answer' } : null,
+    { k: 't', label: 'Second note (target)', ok: feedback.secondNoteOk, want: noteLabelFull(question.targetMidi), got: feedback.secondAnswer != null ? noteLabelFull(feedback.secondAnswer) : 'no answer' }
+  ].filter(Boolean).map(r => /*#__PURE__*/React.createElement("div", { key: r.k, className: 'breakdown-row ' + (r.ok ? 'ok' : 'bad') },
+    r.ok ? /*#__PURE__*/React.createElement(Check, { size: 12 }) : /*#__PURE__*/React.createElement(X, { size: 12 }),
+    /*#__PURE__*/React.createElement("span", null, " " + r.label + " \u2014 " + (r.ok ? r.want : ("correct: " + r.want))),
+    !r.ok && /*#__PURE__*/React.createElement("span", { className: "muted" }, " \u00b7 you said: " + r.got)
+  ))) : null, /*#__PURE__*/React.createElement("div", {
     className: 'answer-group' + (feedback ? ' locked' : '')
-  }, /*#__PURE__*/React.createElement("div", {
+  }, ((stage === 1 && guessBoth) || stage === 2) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "answer-label"
-  }, "Letter"), /*#__PURE__*/React.createElement("div", {
+  }, (stage === 1 ? "First note \u00b7 letter" : ((guessBoth || guessInterval) ? "Second note \u00b7 letter" : "Letter"))), /*#__PURE__*/React.createElement("div", {
     className: "letters-grid"
   }, displayLetters.map(l => /*#__PURE__*/React.createElement("button", {
     key: l,
@@ -1418,7 +1481,7 @@ function RangefinderApp() {
     key: o,
     className: 'oct-btn' + (selectedOctave === o ? ' selected' : ''),
     onClick: () => setSelectedOctave(cur => cur === o ? null : o)
-  }, o))), guessInterval && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+  }, o)))), (stage === 1 && guessInterval) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "answer-label"
   }, "Interval name"), /*#__PURE__*/React.createElement("div", {
     className: "pill-row"
@@ -1439,9 +1502,9 @@ function RangefinderApp() {
     onClick: handleNext
   }, "Next question") : /*#__PURE__*/React.createElement("button", {
     className: "primary-btn",
-    disabled: selectedLetter === null || selectedOctave === null || (guessInterval && (selectedIntervalSt === null || selectedIntervalName === null)),
+    disabled: (stage === 1 ? ((guessBoth && (selectedLetter === null || selectedOctave === null)) || (guessInterval && (selectedIntervalSt === null || selectedIntervalName === null))) : (selectedLetter === null || selectedOctave === null)),
     onClick: () => handleSubmit(false)
-  }, "Submit answer"), !feedback && /*#__PURE__*/React.createElement("div", {
+  }, stage === 1 ? "Check & continue" : "Submit answer"), !feedback && /*#__PURE__*/React.createElement("div", {
     className: "skip-row"
   }, /*#__PURE__*/React.createElement("button", {
     className: "skip-link",

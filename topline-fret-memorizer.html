@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Memorization">
 <title>Memorization</title>
 <meta name="apple-mobile-web-app-title" content="Memorization">
 <style>
@@ -482,6 +484,36 @@ const FULL_DEFAULT = [{
 const QUIZ_COUNT = 2;
 const QUIZ_INDICES = [4, 5]; // bottom two strings (A and low E in standard)
 
+const TUNING_PRESETS = [
+  { label: 'Standard', defs: [
+    { letter: 'E', acc: 'natural', octave: 4 }, { letter: 'B', acc: 'natural', octave: 3 },
+    { letter: 'G', acc: 'natural', octave: 3 }, { letter: 'D', acc: 'natural', octave: 3 },
+    { letter: 'A', acc: 'natural', octave: 2 }, { letter: 'E', acc: 'natural', octave: 2 } ] },
+  { label: 'Drop D', defs: [
+    { letter: 'E', acc: 'natural', octave: 4 }, { letter: 'B', acc: 'natural', octave: 3 },
+    { letter: 'G', acc: 'natural', octave: 3 }, { letter: 'D', acc: 'natural', octave: 3 },
+    { letter: 'A', acc: 'natural', octave: 2 }, { letter: 'D', acc: 'natural', octave: 2 } ] },
+  { label: 'Drop C', defs: [
+    { letter: 'D', acc: 'natural', octave: 4 }, { letter: 'A', acc: 'natural', octave: 3 },
+    { letter: 'F', acc: 'natural', octave: 3 }, { letter: 'C', acc: 'natural', octave: 3 },
+    { letter: 'G', acc: 'natural', octave: 2 }, { letter: 'C', acc: 'natural', octave: 2 } ] },
+  { label: 'C# Standard', defs: [
+    { letter: 'C', acc: 'sharp', octave: 4 }, { letter: 'G', acc: 'sharp', octave: 3 },
+    { letter: 'E', acc: 'natural', octave: 3 }, { letter: 'B', acc: 'natural', octave: 2 },
+    { letter: 'F', acc: 'sharp', octave: 2 }, { letter: 'C', acc: 'sharp', octave: 2 } ] },
+  { label: 'Drop A', defs: [
+    { letter: 'B', acc: 'natural', octave: 3 }, { letter: 'F', acc: 'sharp', octave: 3 },
+    { letter: 'D', acc: 'natural', octave: 3 }, { letter: 'A', acc: 'natural', octave: 2 },
+    { letter: 'E', acc: 'natural', octave: 2 }, { letter: 'A', acc: 'natural', octave: 1 } ] },
+  { label: 'B Standard', defs: [
+    { letter: 'B', acc: 'natural', octave: 3 }, { letter: 'F', acc: 'sharp', octave: 3 },
+    { letter: 'D', acc: 'natural', octave: 3 }, { letter: 'A', acc: 'natural', octave: 2 },
+    { letter: 'E', acc: 'natural', octave: 2 }, { letter: 'B', acc: 'natural', octave: 1 } ] },
+  { label: 'Signature', defs: [
+    { letter: 'D', acc: 'natural', octave: 4 }, { letter: 'A', acc: 'natural', octave: 3 },
+    { letter: 'F', acc: 'natural', octave: 3 }, { letter: 'C', acc: 'natural', octave: 3 },
+    { letter: 'F', acc: 'natural', octave: 2 }, { letter: 'C', acc: 'natural', octave: 2 } ] }
+];
 const FRETBOARD_HEIGHT = 120;
 const STRING_PAD = 14;
 
@@ -534,9 +566,9 @@ function ToplineApp() {
   });
   const [history, setHistory] = useState([]); // { str, fret, midi, correct, time }
   const [showSettings, setShowSettings] = useState(false);
-  const [showNumbers, setShowNumbers] = useState(true);
+  const [showNumbers, setShowNumbers] = useState(false);
   const [showLabels, setShowLabels] = useState(true);
-  const [shuffleLetters, setShuffleLetters] = useState(false);
+  const [shuffleLetters, setShuffleLetters] = useState(true);
   const displayLetters = React.useMemo(() => {
     if (!shuffleLetters) return LETTERS;
     const a = LETTERS.slice();
@@ -547,7 +579,7 @@ function ToplineApp() {
     return a;
   }, [question, shuffleLetters]);
 
-  const [stringDefs, setStringDefs] = useState(FULL_DEFAULT);
+  const [stringDefs, setStringDefs] = useState(TUNING_PRESETS[2].defs);
   const [enabledStrings, setEnabledStrings] = useState([4, 5]);
   const toggleString = i => setEnabledStrings(prev => prev.includes(i) ? (prev.length > 1 ? prev.filter(x => x !== i) : prev) : [...prev, i].sort((a, b) => a - b));
   const [minFret, setMinFret] = useState(0);
@@ -765,6 +797,9 @@ function ToplineApp() {
         .settings-label { font-size:13px; color:var(--cream); }
         .settings-divider { height:1px; background:var(--border); margin:14px 0; }
         .settings-hint { font-size:11px; color:var(--muted); line-height:1.5; margin:2px 0 12px; }
+        .tuning-preset-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+        .preset-btn { padding:6px 11px; border-radius:8px; border:1px solid var(--border); background:var(--panel-soft); color:var(--cream); font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; cursor:pointer; }
+        .preset-btn:active { background:var(--rust); border-color:var(--rust); color:#20110a; }
         .chip-row { display:flex; gap:6px; flex-wrap:wrap; }
         .range-row { display:flex; align-items:flex-end; gap:8px; margin-bottom:6px; }
         .range-field { display:flex; flex-direction:column; gap:4px; }
@@ -900,7 +935,11 @@ function ToplineApp() {
     key: si,
     className: 'str-btn' + (enabledStrings.includes(si) ? ' on' : ''),
     onClick: () => toggleString(si)
-  }, (si + 1) + ' \u00b7 ' + stringLabel(sdef)))), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Questions come only from the highlighted strings. At least one always stays on."), /*#__PURE__*/React.createElement("div", { className: "settings-row", style: { marginBottom: 8 } }, /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Tuning")), stringDefs.map((_ignored, i) => {
+  }, (si + 1) + ' \u00b7 ' + stringLabel(sdef)))), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Questions come only from the highlighted strings. At least one always stays on."), /*#__PURE__*/React.createElement("div", { className: "settings-row", style: { marginBottom: 8 } }, /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Tuning")), /*#__PURE__*/React.createElement("div", { className: "tuning-preset-row" }, TUNING_PRESETS.map(p => /*#__PURE__*/React.createElement("button", {
+    key: p.label,
+    className: "preset-btn",
+    onClick: () => setStringDefs(p.defs)
+  }, p.label))), stringDefs.map((_ignored, i) => {
     const def = stringDefs[i];
     const valid = /^[A-G]$/i.test((def.letter || '').trim());
     return /*#__PURE__*/React.createElement("div", {
