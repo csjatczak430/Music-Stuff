@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Interval">
 <title>Interval</title>
 <meta name="apple-mobile-web-app-title" content="Interval">
 <style>
@@ -510,6 +512,8 @@ const INTERVALS = [{
   st: 12,
   name: 'Octave'
 }];
+const INTERVAL_NAMES = INTERVALS.map(i => i.name);
+const SEMITONE_NUMBERS = INTERVALS.map(i => i.st);
 const TIME_OPTIONS = [5, 10, 15, 20, 30];
 const FRET_COUNT = 15;
 const INLAY_FRETS = [3, 5, 7, 9, 15];
@@ -666,6 +670,11 @@ function RangefinderApp() {
   useEffect(() => { guessBothRef.current = guessBoth; }, [guessBoth]);
   const [stage, setStage] = useState(1); // 0 = name the given note (hard mode), 1 = name the target
   const [firstDone, setFirstDone] = useState(false);
+  const [hideFirstNote, setHideFirstNote] = useState(false);
+  const [hideInterval, setHideInterval] = useState(false);
+  const [guessInterval, setGuessInterval] = useState(false);
+  const [selectedIntervalSt, setSelectedIntervalSt] = useState(null);
+  const [selectedIntervalName, setSelectedIntervalName] = useState(null);
   const [activeTone, setActiveTone] = useState(null);
   const [stats, setStats] = useState({
     correct: 0,
@@ -685,6 +694,24 @@ function RangefinderApp() {
     }
     return a;
   }, [question, shuffleLetters]);
+  const displayAccidentals = React.useMemo(() => {
+    if (!shuffleLetters) return ACCIDENTALS;
+    const a = ACCIDENTALS.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }, [question, shuffleLetters]);
+  const displayIntervalNames = React.useMemo(() => {
+    if (!shuffleLetters) return INTERVAL_NAMES;
+    const a = INTERVAL_NAMES.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }, [question, shuffleLetters]);
+  const displaySemitones = React.useMemo(() => {
+    if (!shuffleLetters) return SEMITONE_NUMBERS;
+    const a = SEMITONE_NUMBERS.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }, [question, shuffleLetters]);
 
   const [stringDefs, setStringDefs] = useState(DEFAULT_TUNING);
   const [intervalChoice, setIntervalChoice] = useState('random'); // 'random' | '1'..'12'
@@ -699,8 +726,17 @@ function RangefinderApp() {
   const openMidis = stringDefs.map(stringMidi);
   const minOct = octaveOf(Math.min(...openMidis));
   const maxOct = octaveOf(Math.max(...openMidis) + FRET_COUNT);
-  const octaveOptions = [];
-  for (let o = minOct; o <= maxOct; o++) octaveOptions.push(o);
+  const octaveOptions = React.useMemo(() => {
+    const arr = [];
+    for (let o = minOct; o <= maxOct; o++) arr.push(o);
+    return arr;
+  }, [minOct, maxOct]);
+  const displayOctaves = React.useMemo(() => {
+    if (!shuffleLetters) return octaveOptions;
+    const a = octaveOptions.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }, [question, shuffleLetters, octaveOptions]);
 
   /* ---------- audio ---------- */
   const ensureAudioCtx = useCallback(() => {
@@ -753,6 +789,8 @@ function RangefinderApp() {
     setSelectedLetter(null);
     setSelectedAccidental('natural');
     setSelectedOctave(null);
+    setSelectedIntervalSt(null);
+    setSelectedIntervalName(null);
     setFeedback(null);
     answeredRef.current = false;
     setStage(guessBothRef.current ? 0 : 1);
@@ -771,6 +809,7 @@ function RangefinderApp() {
   const handleSubmit = useCallback((isTimeout = false) => {
     if (answeredRef.current || !question) return;
     if (!isTimeout && (selectedLetter === null || selectedOctave === null)) return;
+    if (!isTimeout && guessInterval && (selectedIntervalSt === null || selectedIntervalName === null)) return;
     answeredRef.current = true;
     const elapsed = (Date.now() - startTimeRef.current) / 1000;
     let correct = false;
@@ -792,6 +831,9 @@ function RangefinderApp() {
         return;
       }
       correct = answerMidi === question.targetMidi;
+      if (guessInterval) {
+        correct = correct && selectedIntervalSt === question.interval.st && selectedIntervalName === question.interval.name;
+      }
     }
     setFeedback({
       correct,
@@ -809,7 +851,7 @@ function RangefinderApp() {
         name: question.interval.name
       }]);
     }
-  }, [question, selectedLetter, selectedAccidental, selectedOctave, guessBoth, stage]);
+  }, [question, selectedLetter, selectedAccidental, selectedOctave, guessBoth, stage, guessInterval, selectedIntervalSt, selectedIntervalName]);
 
   // Single timer drives both the live stopwatch and (optionally) the countdown.
   useEffect(() => {
@@ -1072,9 +1114,18 @@ function RangefinderApp() {
     /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Guess both notes"),
     /*#__PURE__*/React.createElement("button", { className: 'tgl' + (guessBoth ? ' on' : ''), onClick: () => setGuessBoth(v => !v) }, guessBoth ? 'On' : 'Off')
   ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
-    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Shuffle letter buttons"),
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Hide given note"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (hideFirstNote ? ' on' : ''), onClick: () => setHideFirstNote(v => !v) }, hideFirstNote ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Hide interval"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (hideInterval ? ' on' : ''), onClick: () => setHideInterval(v => !v) }, hideInterval ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Guess interval"),
+    /*#__PURE__*/React.createElement("button", { className: 'tgl' + (guessInterval ? ' on' : ''), onClick: () => setGuessInterval(v => !v) }, guessInterval ? 'On' : 'Off')
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-row" },
+    /*#__PURE__*/React.createElement("span", { className: "settings-label" }, "Shuffle answer buttons"),
     /*#__PURE__*/React.createElement("button", { className: 'tgl' + (shuffleLetters ? ' on' : ''), onClick: () => setShuffleLetters(v => !v) }, shuffleLetters ? 'On' : 'Off')
-  ), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Realism mode: turn numbers and labels off to drill the neck like a real guitar. Shuffle reorders the letter buttons every question so finger memory can't help you."),
+  ), /*#__PURE__*/React.createElement("div", { className: "settings-hint" }, "Hide given note: the first note stays a ? until you answer, no extra guess required. Guess both notes: a stricter two-step mode requiring you to name the given note before the target is revealed. Hide interval / Guess interval: the same idea for the interval shown above the fretboard — hide just displays a ? until you answer, guess also requires picking the interval's name and semitone count. Realism mode: turn numbers and labels off to drill the neck like a real guitar. Shuffle reorders every answer grid — letters, accidentals, octaves, interval names, semitones — on every question, so finger memory can't help you."),
   /*#__PURE__*/React.createElement("div", { className: "settings-divider" }), /*#__PURE__*/React.createElement("div", {
     className: "settings-row",
     style: {
@@ -1201,13 +1252,13 @@ function RangefinderApp() {
     className: "eyebrow"
   }, "Starting note"), /*#__PURE__*/React.createElement("div", {
     className: "note-display"
-  }, guessBoth && stage === 0 && !feedback ? '?' : noteLabel(question.startMidi)), /*#__PURE__*/React.createElement("div", {
+  }, (guessBoth && stage === 0 && !feedback) || (hideFirstNote && !feedback) ? '?' : noteLabel(question.startMidi)), /*#__PURE__*/React.createElement("div", {
     className: "interval-row"
   }, question.direction === 'above' ? /*#__PURE__*/React.createElement(ArrowUp, {
     size: 16
   }) : /*#__PURE__*/React.createElement(ArrowDown, {
     size: 16
-  }), question.interval.name, " ", question.direction, /*#__PURE__*/React.createElement("span", {
+  }), (hideInterval || guessInterval) && !feedback ? '?' : question.interval.name, " ", question.direction, ((hideInterval || guessInterval) && !feedback) ? null : /*#__PURE__*/React.createElement("span", {
     className: "semitone-tag"
   }, "(", question.interval.st, " st)"))), /*#__PURE__*/React.createElement("div", {
     className: "fretboard-wrap"
@@ -1340,7 +1391,7 @@ function RangefinderApp() {
       fontWeight: 400,
       fontSize: 12
     }
-  }, guessBoth ? (stage === 0 ? "Step 1 of 2 · name the given note" : (firstDone ? "Given note correct · now name the target" : "Step 2 of 2 · name the target")) : "Pick letter, accidental & octave")), /*#__PURE__*/React.createElement("div", {
+  }, guessBoth ? (stage === 0 ? "Step 1 of 2 · name the given note" : (firstDone ? "Given note correct · now name the target" : "Step 2 of 2 · name the target")) : (guessInterval ? "Pick the note & identify the interval" : "Pick letter, accidental & octave"))), /*#__PURE__*/React.createElement("div", {
     className: 'answer-group' + (feedback ? ' locked' : '')
   }, /*#__PURE__*/React.createElement("div", {
     className: "answer-label"
@@ -1354,7 +1405,7 @@ function RangefinderApp() {
     className: "answer-label"
   }, "Accidental"), /*#__PURE__*/React.createElement("div", {
     className: "pill-row"
-  }, ACCIDENTALS.map(a => /*#__PURE__*/React.createElement("button", {
+  }, displayAccidentals.map(a => /*#__PURE__*/React.createElement("button", {
     key: a.id,
     className: 'acc-btn' + (selectedAccidental === a.id ? ' selected' : ''),
     onClick: () => setSelectedAccidental(a.id),
@@ -1363,16 +1414,32 @@ function RangefinderApp() {
     className: "answer-label"
   }, "Octave"), /*#__PURE__*/React.createElement("div", {
     className: "pill-row"
-  }, octaveOptions.map(o => /*#__PURE__*/React.createElement("button", {
+  }, displayOctaves.map(o => /*#__PURE__*/React.createElement("button", {
     key: o,
     className: 'oct-btn' + (selectedOctave === o ? ' selected' : ''),
     onClick: () => setSelectedOctave(cur => cur === o ? null : o)
-  }, o)))), feedback ? /*#__PURE__*/React.createElement("button", {
+  }, o))), guessInterval && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "answer-label"
+  }, "Interval name"), /*#__PURE__*/React.createElement("div", {
+    className: "pill-row"
+  }, displayIntervalNames.map(nm => /*#__PURE__*/React.createElement("button", {
+    key: nm,
+    className: 'oct-btn' + (selectedIntervalName === nm ? ' selected' : ''),
+    onClick: () => setSelectedIntervalName(cur => cur === nm ? null : nm)
+  }, nm))), /*#__PURE__*/React.createElement("div", {
+    className: "answer-label"
+  }, "Semitones"), /*#__PURE__*/React.createElement("div", {
+    className: "pill-row"
+  }, displaySemitones.map(n => /*#__PURE__*/React.createElement("button", {
+    key: n,
+    className: 'oct-btn' + (selectedIntervalSt === n ? ' selected' : ''),
+    onClick: () => setSelectedIntervalSt(cur => cur === n ? null : n)
+  }, n))))), feedback ? /*#__PURE__*/React.createElement("button", {
     className: "primary-btn",
     onClick: handleNext
   }, "Next question") : /*#__PURE__*/React.createElement("button", {
     className: "primary-btn",
-    disabled: selectedLetter === null || selectedOctave === null,
+    disabled: selectedLetter === null || selectedOctave === null || (guessInterval && (selectedIntervalSt === null || selectedIntervalName === null)),
     onClick: () => handleSubmit(false)
   }, "Submit answer"), !feedback && /*#__PURE__*/React.createElement("div", {
     className: "skip-row"
